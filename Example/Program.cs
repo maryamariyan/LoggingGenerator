@@ -55,13 +55,12 @@ namespace Example
 
     class Program
     {
+#pragma warning disable LA0000 // Switch to updated logging methods using the [LoggerMessage] attribute for additional performance.
         public static void Test(ILogger logger)
         {
-            LoggerExtensions.LogInformation(logger, new EventId(0, ""), "Foo", 1, 2, 3);
-            LoggerExtensions.LogInformation(logger, new Exception(), "Foo", 1, 2, 3);
-            LoggerExtensions.LogInformation(logger, new EventId(0, ""), new Exception(), "foo", 1, 2, 3);
-            LoggerExtensions.LogInformation(logger, "Foo", 1, 2, 3);
+            logger.LogInformation("Hello");
         }
+#pragma warning restore LA0000 // Switch to updated logging methods using the [LoggerMessage] attribute for additional performance.
 
         static void Main()
         {

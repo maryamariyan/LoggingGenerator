@@ -117,11 +117,15 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="CodeFixTitle" xml:space="preserve">
+    <value>Make uppercase</value>
+  </data>
   <data name="UsingLegacyMethodDescription" xml:space="preserve">
     <value>Identifies calls to legacy logging methods.</value>
   </data>
   <data name="UsingLegacyMethodMessage" xml:space="preserve">
-    <value>Call to legacy logging method. </value>
+    <value>Call to legacy logging method can be replaced with faster logging techniques. </value>
+    <comment> </comment>
   </data>
   <data name="UsingLegacyMethodTitle" xml:space="preserve">
     <value>Switch to updated logging methods using the [LoggerMessage] attribute for additional performance.</value>

@@ -11,17 +11,17 @@ namespace Microsoft.Extensions.Logging.Analyzers
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class LoggingAnalyzer : DiagnosticAnalyzer
     {
-        public const string DiagnosticId = "LA0000";
+        internal const string DiagnosticId = "LA0000";
         private const string DiagnosticCategory = "Performance";
 
 #pragma warning disable RS2008 // Enable analyzer release tracking
 
         private static readonly DiagnosticDescriptor UsingLegacyLoggingMethod = new(
             id: DiagnosticId,
-            title: new LocalizableResourceString(nameof(Resources.UsingLegacyMethodTitle), Resources.ResourceManager, typeof(Resources)),
-            messageFormat: new LocalizableResourceString(nameof(Resources.UsingLegacyMethodMessage), Resources.ResourceManager, typeof(Resources)),
+            title: Resources.UsingLegacyMethodTitle,
+            messageFormat: Resources.UsingLegacyMethodMessage,
             category: DiagnosticCategory,
-            description: new LocalizableResourceString(nameof(Resources.UsingLegacyMethodDescription), Resources.ResourceManager, typeof(Resources)),
+            description: Resources.UsingLegacyMethodDescription,
             defaultSeverity: DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
 

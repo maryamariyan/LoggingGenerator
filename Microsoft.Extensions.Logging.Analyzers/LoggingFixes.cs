@@ -14,19 +14,11 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Extensions.Logging.Analyzers
 {
-    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(LoggingAnalyzerFixes)), Shared]
-    public class LoggingAnalyzerFixes : CodeFixProvider
+    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(LoggingFixes)), Shared]
+    public class LoggingFixes : CodeFixProvider
     {
-        public sealed override ImmutableArray<string> FixableDiagnosticIds
-        {
-            get { return ImmutableArray.Create(LoggingAnalyzer.DiagnosticId); }
-        }
-
-        public sealed override FixAllProvider GetFixAllProvider()
-        {
-            // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/FixAllProvider.md for more information on Fix All Providers
-            return WellKnownFixAllProviders.BatchFixer;
-        }
+        public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(LoggingAnalyzer.DiagnosticId);
+        public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
