@@ -55,6 +55,14 @@ namespace Example
 
     class Program
     {
+        public static void Test(ILogger logger)
+        {
+            LoggerExtensions.LogInformation(logger, new EventId(0, ""), "Foo", 1, 2, 3);
+            LoggerExtensions.LogInformation(logger, new Exception(), "Foo", 1, 2, 3);
+            LoggerExtensions.LogInformation(logger, new EventId(0, ""), new Exception(), "foo", 1, 2, 3);
+            LoggerExtensions.LogInformation(logger, "Foo", 1, 2, 3);
+        }
+
         static void Main()
         {
             using var loggerFactory = LoggerFactory.Create(builder =>
