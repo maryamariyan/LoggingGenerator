@@ -61,11 +61,11 @@ namespace Microsoft.Extensions.Logging.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Make uppercase.
+        ///   Looks up a localized string similar to Generate a strongly-typed logging method..
         /// </summary>
-        internal static string CodeFixTitle {
+        internal static string GenerateStronglyTypedLoggingMethod {
             get {
-                return ResourceManager.GetString("CodeFixTitle", resourceCulture);
+                return ResourceManager.GetString("GenerateStronglyTypedLoggingMethod", resourceCulture);
             }
         }
         
@@ -79,7 +79,7 @@ namespace Microsoft.Extensions.Logging.Analyzers {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Call to legacy logging method can be replaced with faster logging techniques. .
+        ///   Looks up a localized string similar to Calls to legacy logging method can be replaced with faster alternatives..
         /// </summary>
         internal static string UsingLegacyMethodMessage {
             get {

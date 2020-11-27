@@ -1,13 +1,16 @@
 ﻿// © Microsoft Corporation. All rights reserved.
 
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Operations;
-using System.Collections.Generic;
-using System.Collections.Immutable;
+[assembly: System.Resources.NeutralResourcesLanguage("en-us")]
 
 namespace Microsoft.Extensions.Logging.Analyzers
 {
+    using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.Diagnostics;
+    using Microsoft.CodeAnalysis.Operations;
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.Immutable;
+
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class LoggingAnalyzer : DiagnosticAnalyzer
     {
@@ -29,6 +32,11 @@ namespace Microsoft.Extensions.Logging.Analyzers
 
         public override void Initialize(AnalysisContext context)
         {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
 
@@ -71,14 +79,6 @@ namespace Microsoft.Extensions.Logging.Analyzers
                     }, OperationKind.Invocation);
                 });
             });
-        }
-
-        private static void AnalyzeSymbol(SymbolAnalysisContext context)
-        {
-        }
-
-        private void AnalyzeNode(SyntaxNodeAnalysisContext context)
-        {
         }
     }
 }

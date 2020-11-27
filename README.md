@@ -17,6 +17,17 @@ The Microsoft.Extensions.Logging.Generators project uses C# 9.0 source generator
 responsible for finding types annotated with the [LoggerExtensions] attribute and automatically generating the strongly-typed
 logging methods.
 
+## Analyzer and Fixes
+
+The Microsoft.Logging.Generators.Analyzers package contains an analyzer that produces a warning
+for any uses of the legacy LoggerExtensions.Log<Debug|Information|Warning|Error|Critical|Trace>() 
+methods.
+
+For most of these uses, fixer logic is also available that makes it trivial for a use to highlight a
+use of a legacy log method and have a shiny new strongly-type logging method signature 
+be generated automatically. This makes it a snap to convert existing log uses to the new moe
+efficient form.
+
 ## Design Issues
 
 The fact this uses types generated dynamically at compile-time means
@@ -26,9 +37,30 @@ with Roslyn will show red squiggles to the developer, which is sad.
 
 ## Implementation Todos
 
+General
+
 * Add nuget packaging voodoo
+
+Generator
+
 * Support nullable message parameter types
+* Support extension method syntax for logging methods
 * The Microsoft.Extensions.Logging.Extras assembly is only temporary. The types in here should go to the Microsoft.Extensions.Logging.Abstractions assembly
+* Get improved SemanticModel workaround from Jared
+
+Analyzer
+
+* Nothing to do
+* Add unit tests
+
+Fixer
+
+* Generate a comment above the logging method sig
+* Handle cases where the message string is a const
+* Pick a different filename for the generated log file if the project already contains a file by that name.
+* Pick a different method name if the target class already contains a method by that name
+* If the target class is in the same file as the legacy call site, then things get confused
+* Add unit tests
 
 ## Example
 

@@ -55,13 +55,6 @@ namespace Example
 
     class Program
     {
-#pragma warning disable LA0000 // Switch to updated logging methods using the [LoggerMessage] attribute for additional performance.
-        public static void Test(ILogger logger)
-        {
-            logger.LogInformation("Hello");
-        }
-#pragma warning restore LA0000 // Switch to updated logging methods using the [LoggerMessage] attribute for additional performance.
-
         static void Main()
         {
             using var loggerFactory = LoggerFactory.Create(builder =>
