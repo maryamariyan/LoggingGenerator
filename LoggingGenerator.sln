@@ -21,6 +21,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Extensions.Loggin
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Extensions.Logging.Analyzers", "Microsoft.Extensions.Logging.Analyzers\Microsoft.Extensions.Logging.Analyzers.csproj", "{93897859-AB7A-498C-814E-1A92E339A045}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Extensions.Logging.Analyzers.Tests", "Microsoft.Extensions.Logging.Analyzers.Tests\Microsoft.Extensions.Logging.Analyzers.Tests.csproj", "{B3C395BF-8832-48AA-9C71-661707EB8293}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{93897859-AB7A-498C-814E-1A92E339A045}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93897859-AB7A-498C-814E-1A92E339A045}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93897859-AB7A-498C-814E-1A92E339A045}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3C395BF-8832-48AA-9C71-661707EB8293}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3C395BF-8832-48AA-9C71-661707EB8293}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3C395BF-8832-48AA-9C71-661707EB8293}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3C395BF-8832-48AA-9C71-661707EB8293}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

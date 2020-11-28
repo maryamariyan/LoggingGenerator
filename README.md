@@ -50,7 +50,6 @@ Generator
 
 Analyzer
 
-* Nothing to do
 * Add unit tests
 
 Fixer

@@ -9,6 +9,8 @@ namespace Microsoft.Extensions.Logging.Analyzers
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Editing;
     using Microsoft.CodeAnalysis.Operations;
+    using Microsoft.CodeAnalysis.Text;
+    using System;
     using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Composition;
@@ -24,61 +26,81 @@ namespace Microsoft.Extensions.Logging.Analyzers
 
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
-            var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-            if (root.FindNode(context.Span) is not InvocationExpressionSyntax invocationExpression)
+            var (invocationExpression, details) = await CheckIfCanFix(context.Document, context.Span, context.CancellationToken).ConfigureAwait(false);
+            if (invocationExpression != null && details != null)
+            {
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        title: Resources.GenerateStronglyTypedLoggingMethod,
+                        createChangedSolution: cancellationToken => ApplyFix(context.Document, invocationExpression, details, cancellationToken),
+                        equivalenceKey: nameof(Resources.GenerateStronglyTypedLoggingMethod)),
+                    context.Diagnostics);
+            }
+        }
+
+        internal static async Task<(InvocationExpressionSyntax?, FixDetails?)> CheckIfCanFix(Document invocationDoc, TextSpan span, CancellationToken cancellationToken)
+        {
+            var root = await invocationDoc.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            if (root == null || root.FindNode(span) is not InvocationExpressionSyntax invocationExpression)
             {
                 // shouldn't happen, we only get called for invocations
-                return;
+                return (null, null);
             }
 
-            var sm = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+            var sm = await invocationDoc.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            if (sm == null)
+            {
+                // shouldn't happen
+                return (null, null);
+            }
+
             var comp = sm.Compilation;
 
             var loggerExtensions = comp.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
             if (loggerExtensions == null)
             {
                 // should't happen, we only get called for calls on this type
-                return;
+                return (null, null);
             }
 
-            var op = sm.GetOperation(invocationExpression, context.CancellationToken);
+            var op = sm.GetOperation(invocationExpression, cancellationToken);
             if (op is not IInvocationOperation invocation)
             {
                 // shouldn't happen, we're dealing with an invocation expression
-                return;
+                return (null, null);
             }
 
             var method = invocation.TargetMethod;
             if (method == null)
             {
                 // shouldn't happen, we should only be called with a known target method
-                return;
+                return (null, null);
             }
 
-            var details = new FixDetails(method, invocation, context.Document.Project.DefaultNamespace);
+            var details = new FixDetails(method, invocation, invocationDoc.Project.DefaultNamespace);
 
             if (string.IsNullOrWhiteSpace(details.Message))
             {
                 // can't auto-generate without a valid message string
-                return;
+                return (null, null);
             }
 
             if (details.EventIdParamIndex >= 0)
             {
                 // can't auto-generate the variants using event id
-                return;
+                return (null, null);
             }
 
-            // OK, we can do something about this instance!
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    title: Resources.GenerateStronglyTypedLoggingMethod,
-                    createChangedSolution: cancellationToken => ApplyFix(context.Document, invocationExpression, details, cancellationToken),
-                    equivalenceKey: nameof(Resources.GenerateStronglyTypedLoggingMethod)),
-                context.Diagnostics);
+            if (string.IsNullOrWhiteSpace(details.Level))
+            {
+                // can't auto-generate without a valid level
+                return (null, null);
+            }
+
+            return (invocationExpression, details);
         }
 
-        private static async Task<Solution> ApplyFix(Document invocationDoc, InvocationExpressionSyntax invocationExpression, FixDetails details, CancellationToken cancellationToken)
+        internal static async Task<Solution> ApplyFix(Document invocationDoc, InvocationExpressionSyntax invocationExpression, FixDetails details, CancellationToken cancellationToken)
         {
             ClassDeclarationSyntax targetClass;
             Document targetDoc;
@@ -124,17 +146,17 @@ namespace Microsoft.Extensions.Logging.Analyzers
             var doc = sol.GetDocument(docId)!;
             var root = await doc.GetSyntaxRootAsync().ConfigureAwait(false);
 
-            return (doc, (root.FindNode(invocationExpression.Span) as InvocationExpressionSyntax)!);
+            return (doc, (root!.FindNode(invocationExpression.Span) as InvocationExpressionSyntax)!);
         }
 
         /// <summary>
         /// FInds the class into which to create the logging method signature, or creates it if it doesn't exist
         /// </summary>
-        private static async Task<(Solution, ClassDeclarationSyntax, Document)> GetOrMakeTargetClass(Project proj, FixDetails details, CancellationToken cancellationToken)
+        internal static async Task<(Solution, ClassDeclarationSyntax, Document)> GetOrMakeTargetClass(Project proj, FixDetails details, CancellationToken cancellationToken)
         {
             for (; ; )
             {
-                var sm = await proj.Documents.First().GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+                var sm = (await proj.Documents.First().GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
 
                 var allNodes = sm.Compilation.SyntaxTrees.SelectMany(s => s.GetRoot().DescendantNodes());
                 var allClasses = allNodes.Where(d => d.IsKind(SyntaxKind.ClassDeclaration)).OfType<ClassDeclarationSyntax>();
@@ -183,10 +205,10 @@ namespace {details.TargetNamespace}
             }
         }
 
-        private static async Task<Solution> InsertLoggingMethodSignature(Document targetDoc, ClassDeclarationSyntax targetClass,
+        internal static async Task<Solution> InsertLoggingMethodSignature(Document targetDoc, ClassDeclarationSyntax targetClass,
             Document invocationDoc, InvocationExpressionSyntax invocationExpression, FixDetails details, CancellationToken cancellationToken)
         {
-            var invocationSM = await invocationDoc.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            var invocationSM = (await invocationDoc.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
             var invocation = (invocationSM.GetOperation(invocationExpression, cancellationToken) as IInvocationOperation)!;
 
             var solEditor = new SolutionEditor(targetDoc.Project.Solution);
@@ -279,7 +301,7 @@ namespace {details.TargetNamespace}
                         if (maSymbol.Symbol is IMethodSymbol ms && loggerMessageAttribute.Equals(ms.ContainingType, SymbolEqualityComparer.Default))
                         {
                             var arg = ma.ArgumentList!.Arguments[0];
-                            var eventId = (int)sm.GetConstantValue(arg.Expression, cancellationToken).Value;
+                            var eventId = (int)(sm.GetConstantValue(arg.Expression, cancellationToken).Value!);
                             if (eventId > max)
                             {
                                 max = eventId;

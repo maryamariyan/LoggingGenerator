@@ -16,9 +16,10 @@ namespace Microsoft.Extensions.Logging.Analyzers
         public readonly int MessageParamIndex;
         public readonly int ExceptionParamIndex;
         public readonly int EventIdParamIndex;
+        public readonly int LogLevelParamIndex;
         public readonly int ArgsIndex;
         public readonly string Message = string.Empty;
-        public readonly string Level;
+        public readonly string Level = string.Empty;
         public readonly string TargetFilename;
         public readonly string? TargetNamespace;
         public readonly string TargetClassName;
@@ -26,7 +27,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
 
         public FixDetails(IMethodSymbol method, IInvocationOperation invocation, string? defaultNamespace)
         {
-            (MessageParamIndex, ExceptionParamIndex, EventIdParamIndex, ArgsIndex) = IdentifyParameters(method);
+            (MessageParamIndex, ExceptionParamIndex, EventIdParamIndex, LogLevelParamIndex, ArgsIndex) = IdentifyParameters(method);
 
             var lit = invocation.Arguments[MessageParamIndex].Descendants().First() as ILiteralOperation;
             if (lit != null)
@@ -34,10 +35,31 @@ namespace Microsoft.Extensions.Logging.Analyzers
                 Message = (lit.ConstantValue.Value as string)!;
             }
 
-            Level = method.Name.Substring(3);
-            TargetFilename = "LogX.cs";
+            if (method.Name == "Log")
+            {
+                lit = invocation.Arguments[LogLevelParamIndex].Descendants().First() as ILiteralOperation;
+                if (lit != null)
+                {
+                    Level = ((int)(lit.ConstantValue.Value!)) switch
+                    {
+                        0 => "Trace",
+                        1 => "Debug",
+                        2 => "Information",
+                        3 => "Warning",
+                        4 => "Error",
+                        5 => "Critical",
+                        _ => string.Empty,
+                    };
+                }
+            }
+            else
+            {
+                Level = method.Name.Substring(3);
+            };
+
+            TargetFilename = "Log.cs";
             TargetNamespace = defaultNamespace;
-            TargetClassName = "LogX";
+            TargetClassName = "Log";
             TargetMethodName = DeriveName(Message);
         }
 
@@ -58,11 +80,12 @@ namespace Microsoft.Extensions.Logging.Analyzers
         /// Finds the position of the well-known parameters of legacy logging methods. 
         /// </summary>
         /// <returns>-1 for any parameter not present in the given overload</returns>
-        private static (int message, int exception, int eventId, int args) IdentifyParameters(IMethodSymbol method)
+        private static (int message, int exception, int eventId, int logLevel, int args) IdentifyParameters(IMethodSymbol method)
         {
             var message = -1;
             var exception = -1;
             var eventId = -1;
+            var logLevel = -1;
             var args = -1;
 
             int index = 0;
@@ -73,12 +96,13 @@ namespace Microsoft.Extensions.Logging.Analyzers
                     case "message": message = index; break;
                     case "exception": exception = index; break;
                     case "eventId": eventId = index; break;
+                    case "logLevel": logLevel = index; break;
                     case "args": args = index; break;
                 }
                 index++;
             }
 
-            return (message, exception, eventId, args);
+            return (message, exception, eventId, logLevel, args);
         }
 
         /// <summary>

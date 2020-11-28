@@ -1,6 +1,7 @@
 ﻿// © Microsoft Corporation. All rights reserved.
 
 [assembly: System.Resources.NeutralResourcesLanguage("en-us")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Microsoft.Extensions.Logging.Analyzers.Tests")]
 
 namespace Microsoft.Extensions.Logging.Analyzers
 {
@@ -53,6 +54,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
                     legacyMethods.UnionWith(loggerExtensions.GetMembers("LogWarning").OfType<IMethodSymbol>());
                     legacyMethods.UnionWith(loggerExtensions.GetMembers("LogError").OfType<IMethodSymbol>());
                     legacyMethods.UnionWith(loggerExtensions.GetMembers("LogCritical").OfType<IMethodSymbol>());
+                    legacyMethods.UnionWith(loggerExtensions.GetMembers("Log").OfType<IMethodSymbol>());
                 }
 
                 compilationStartContext.RegisterOperationBlockStartAction(operationBlockContext =>
