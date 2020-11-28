@@ -218,7 +218,7 @@ namespace {details.TargetNamespace}
             var gen = docEditor.Generator;
 
             var parameters = new List<SyntaxNode>();
-            var templateArgs = LoggingTemplates.ExtractTemplateArgs(details.Message);
+            var templateArgs = details.MessageArgs;
 
             int eventId = CalcEventId(comp, targetClass, cancellationToken);
 

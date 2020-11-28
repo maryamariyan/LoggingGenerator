@@ -4,6 +4,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
 {
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.Operations;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Text;
 
@@ -21,9 +22,10 @@ namespace Microsoft.Extensions.Logging.Analyzers
         public readonly string Message = string.Empty;
         public readonly string Level = string.Empty;
         public readonly string TargetFilename;
-        public readonly string? TargetNamespace;
+        public readonly string TargetNamespace;
         public readonly string TargetClassName;
         public readonly string TargetMethodName;
+        public readonly IReadOnlyList<string> MessageArgs;
 
         public FixDetails(IMethodSymbol method, IInvocationOperation invocation, string? defaultNamespace)
         {
@@ -58,21 +60,80 @@ namespace Microsoft.Extensions.Logging.Analyzers
             };
 
             TargetFilename = "Log.cs";
-            TargetNamespace = defaultNamespace;
+            TargetNamespace = defaultNamespace ?? string.Empty;
             TargetClassName = "Log";
             TargetMethodName = DeriveName(Message);
+            MessageArgs = ExtractTemplateArgs(Message);
+        }
+
+        // used strictly by unit tests
+        public FixDetails(
+            int messageParamIndex,
+            int exceptionParamIndex,
+            int eventIdParamIndex,
+            int logLevelParamIndex,
+            int argsIndex,
+            string message,
+            string level,
+            string targetFilename,
+            string? targetNamespace,
+            string targetClassName,
+            string targetMethodName,
+            IReadOnlyList<string> messageArgs)
+        {
+            MessageParamIndex = messageParamIndex;
+            ExceptionParamIndex = exceptionParamIndex;
+            EventIdParamIndex = eventIdParamIndex;
+            LogLevelParamIndex = logLevelParamIndex;
+            ArgsIndex = argsIndex;
+            Message = message;
+            Level = level;
+            TargetFilename = targetFilename;
+            TargetNamespace = targetNamespace ?? string.Empty;
+            TargetClassName = targetClassName;
+            TargetMethodName = targetMethodName;
+            MessageArgs = messageArgs;
+        }
+
+        // used strictly by unit tests
+        public bool Equals(FixDetails d)
+        {
+            if (d.MessageArgs.Count != MessageArgs.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < MessageArgs.Count; i++)
+            {
+                if (!d.MessageArgs[i].Equals(Message[i]))
+                {
+                    return false;
+                }
+            }
+
+            return
+                d.MessageParamIndex == MessageParamIndex
+                && d.ExceptionParamIndex == ExceptionParamIndex
+                && d.EventIdParamIndex == EventIdParamIndex
+                && d.LogLevelParamIndex == LogLevelParamIndex
+                && d.ArgsIndex == ArgsIndex
+                && d.Message.Equals(Message)
+                && d.TargetFilename.Equals(TargetFilename)
+                && d.TargetNamespace.Equals(TargetNamespace)
+                && d.TargetClassName.Equals(TargetClassName)
+                && d.TargetMethodName.Equals(TargetMethodName);
         }
 
         public string FullTargetClassName
         {
             get
             {
-                if (TargetNamespace != null)
+                if (string.IsNullOrEmpty(TargetNamespace))
                 {
-                    return $"{TargetNamespace}.{TargetClassName}";
+                    return TargetClassName;
                 }
 
-                return TargetClassName;
+                return $"{TargetNamespace}.{TargetClassName}";
             }
         }
 
@@ -133,6 +194,93 @@ namespace Microsoft.Extensions.Logging.Analyzers
             }
 
             return sb.ToString();
+        }
+
+        static readonly char[] _formatDelimiters = { ',', ':' };
+
+        /// <summary>
+        /// Finds the template arguments contained in the message string
+        /// </summary>
+        private static List<string> ExtractTemplateArgs(string message)
+        {
+            var args = new List<string>();
+            var scanIndex = 0;
+            var endIndex = message.Length;
+
+            while (scanIndex < endIndex)
+            {
+                var openBraceIndex = FindBraceIndex(message, '{', scanIndex, endIndex);
+                var closeBraceIndex = FindBraceIndex(message, '}', openBraceIndex, endIndex);
+
+                if (closeBraceIndex == endIndex)
+                {
+                    scanIndex = endIndex;
+                }
+                else
+                {
+                    // Format item syntax : { index[,alignment][ :formatString] }.
+                    var formatDelimiterIndex = FindIndexOfAny(message, _formatDelimiters, openBraceIndex, closeBraceIndex);
+
+                    args.Add(message.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1));
+                    scanIndex = closeBraceIndex + 1;
+                }
+            }
+
+            return args;
+        }
+
+        private static int FindBraceIndex(string format, char brace, int startIndex, int endIndex)
+        {
+            // Example: {{prefix{{{Argument}}}suffix}}.
+            var braceIndex = endIndex;
+            var scanIndex = startIndex;
+            var braceOccurrenceCount = 0;
+
+            while (scanIndex < endIndex)
+            {
+                if (braceOccurrenceCount > 0 && format[scanIndex] != brace)
+                {
+                    if (braceOccurrenceCount % 2 == 0)
+                    {
+                        // Even number of '{' or '}' found. Proceed search with next occurrence of '{' or '}'.
+                        braceOccurrenceCount = 0;
+                        braceIndex = endIndex;
+                    }
+                    else
+                    {
+                        // An unescaped '{' or '}' found.
+                        break;
+                    }
+                }
+                else if (format[scanIndex] == brace)
+                {
+                    if (brace == '}')
+                    {
+                        if (braceOccurrenceCount == 0)
+                        {
+                            // For '}' pick the first occurrence.
+                            braceIndex = scanIndex;
+                        }
+                    }
+                    else
+                    {
+                        // For '{' pick the last occurrence.
+                        braceIndex = scanIndex;
+                    }
+
+                    braceOccurrenceCount++;
+                }
+
+                scanIndex++;
+            }
+
+            return braceIndex;
+        }
+
+        private static int FindIndexOfAny(string format, char[] chars, int startIndex, int endIndex)
+        {
+            var findIndex = format.IndexOfAny(chars, startIndex, endIndex - startIndex);
+            return findIndex == -1 ? endIndex : findIndex;
         }
     }
 }
