@@ -19,13 +19,13 @@ logging methods.
 
 ## Analyzer and Fixes
 
-The Microsoft.Logging.Generators.Analyzers package contains an analyzer that produces a warning
+The Microsoft.Extensions.Logging.Analyzers project contains an analyzer that produces a warning
 for any uses of the legacy LoggerExtensions.Log<Debug|Information|Warning|Error|Critical|Trace>() 
 methods.
 
-For most of these uses, fixer logic is also available that makes it trivial for a use to highlight a
-use of a legacy log method and have a shiny new strongly-type logging method signature 
-be generated automatically. This makes it a snap to convert existing log uses to the new moe
+For most of these uses, fixer logic is available that makes it trivial for a user to highlight
+call to a legacy log method and have a shiny new strongly-type logging method signature 
+generated automatically. This makes it a snap to convert existing log uses to the new more
 efficient form.
 
 ## Design Issues
