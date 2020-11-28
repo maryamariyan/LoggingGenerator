@@ -37,12 +37,12 @@ namespace Microsoft.Extensions.Logging.Analyzers
                 Message = (lit.ConstantValue.Value as string)!;
             }
 
-            if (method.Name == "Log")
+            if (LogLevelParamIndex > 0)
             {
-                lit = invocation.Arguments[LogLevelParamIndex].Descendants().First() as ILiteralOperation;
-                if (lit != null)
+                var fieldRef = invocation.Arguments[LogLevelParamIndex].Descendants().First() as IFieldReferenceOperation;
+                if (fieldRef != null)
                 {
-                    Level = ((int)(lit.ConstantValue.Value!)) switch
+                    Level = ((int)(fieldRef.ConstantValue.Value!)) switch
                     {
                         0 => "Trace",
                         1 => "Debug",
@@ -64,64 +64,6 @@ namespace Microsoft.Extensions.Logging.Analyzers
             TargetClassName = "Log";
             TargetMethodName = DeriveName(Message);
             MessageArgs = ExtractTemplateArgs(Message);
-        }
-
-        // used strictly by unit tests
-        public FixDetails(
-            int messageParamIndex,
-            int exceptionParamIndex,
-            int eventIdParamIndex,
-            int logLevelParamIndex,
-            int argsIndex,
-            string message,
-            string level,
-            string targetFilename,
-            string? targetNamespace,
-            string targetClassName,
-            string targetMethodName,
-            IReadOnlyList<string> messageArgs)
-        {
-            MessageParamIndex = messageParamIndex;
-            ExceptionParamIndex = exceptionParamIndex;
-            EventIdParamIndex = eventIdParamIndex;
-            LogLevelParamIndex = logLevelParamIndex;
-            ArgsIndex = argsIndex;
-            Message = message;
-            Level = level;
-            TargetFilename = targetFilename;
-            TargetNamespace = targetNamespace ?? string.Empty;
-            TargetClassName = targetClassName;
-            TargetMethodName = targetMethodName;
-            MessageArgs = messageArgs;
-        }
-
-        // used strictly by unit tests
-        public bool Equals(FixDetails d)
-        {
-            if (d.MessageArgs.Count != MessageArgs.Count)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < MessageArgs.Count; i++)
-            {
-                if (!d.MessageArgs[i].Equals(Message[i]))
-                {
-                    return false;
-                }
-            }
-
-            return
-                d.MessageParamIndex == MessageParamIndex
-                && d.ExceptionParamIndex == ExceptionParamIndex
-                && d.EventIdParamIndex == EventIdParamIndex
-                && d.LogLevelParamIndex == LogLevelParamIndex
-                && d.ArgsIndex == ArgsIndex
-                && d.Message.Equals(Message)
-                && d.TargetFilename.Equals(TargetFilename)
-                && d.TargetNamespace.Equals(TargetNamespace)
-                && d.TargetClassName.Equals(TargetClassName)
-                && d.TargetMethodName.Equals(TargetMethodName);
         }
 
         public string FullTargetClassName
@@ -229,7 +171,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
             return args;
         }
 
-        private static int FindBraceIndex(string format, char brace, int startIndex, int endIndex)
+        private static int FindBraceIndex(string message, char brace, int startIndex, int endIndex)
         {
             // Example: {{prefix{{{Argument}}}suffix}}.
             var braceIndex = endIndex;
@@ -238,7 +180,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
 
             while (scanIndex < endIndex)
             {
-                if (braceOccurrenceCount > 0 && format[scanIndex] != brace)
+                if (braceOccurrenceCount > 0 && message[scanIndex] != brace)
                 {
                     if (braceOccurrenceCount % 2 == 0)
                     {
@@ -252,7 +194,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
                         break;
                     }
                 }
-                else if (format[scanIndex] == brace)
+                else if (message[scanIndex] == brace)
                 {
                     if (brace == '}')
                     {
@@ -277,9 +219,9 @@ namespace Microsoft.Extensions.Logging.Analyzers
             return braceIndex;
         }
 
-        private static int FindIndexOfAny(string format, char[] chars, int startIndex, int endIndex)
+        private static int FindIndexOfAny(string message, char[] chars, int startIndex, int endIndex)
         {
-            var findIndex = format.IndexOfAny(chars, startIndex, endIndex - startIndex);
+            var findIndex = message.IndexOfAny(chars, startIndex, endIndex - startIndex);
             return findIndex == -1 ? endIndex : findIndex;
         }
     }
