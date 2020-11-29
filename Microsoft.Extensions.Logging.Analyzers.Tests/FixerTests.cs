@@ -27,6 +27,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             public int ArgsParamIndex = -1;
             public int MessageParamIndex = -1;
             public int LogLevelParamIndex = -1;
+            public int EventIdParamIndex = -1;
             public string[] MessageArgs = Array.Empty<string>();
         }
 
@@ -38,7 +39,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
         }
 
         [Fact]
-        public async Task DetailsTest()
+        public async Task BasicDetails()
         {
             var invocationSourceCode = @"
                 using Microsoft.Extensions.Logging;
@@ -157,23 +158,24 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                 Assert.Equal(data[i].TargetMethodName, details.TargetMethodName);
                 Assert.Equal(data[i].MessageArgs, details.MessageArgs);
                 Assert.Equal(data[i].LogLevelParamIndex, details.LogLevelParamIndex);
+                Assert.Equal(data[i].EventIdParamIndex, details.EventIdParamIndex);
 
                 Assert.Equal(targetClassName, details.TargetClassName);
                 Assert.Equal("Log.cs", details.TargetFilename);
                 Assert.Equal("", details.TargetNamespace);
-                Assert.Equal(-1, details.EventIdParamIndex);
             }
 
             proj.Dispose();
         }
 
         [Fact]
-        public async void CheckIfCanFixTest()
+        public async void UnsupportedForms()
         {
-            // we just deal with the few edge cases not tackled by DetailsTest above
+            // we just deal with the few edge cases not tackled by BasicDetails above
 
             var invocationSourceCode = @"
                 using Microsoft.Extensions.Logging;
+                using System;
 
                 class Container
                 {
@@ -181,9 +183,12 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
 
                     public void Test(ILogger logger)
                     {
-                        /*0+*/logger.LogTrace(new EventId(), ""Hello"");/*-0*/
-                        /*1+*/logger.LogTrace("""");/*-1*/
-                        /*2+*/logger.Log((LogLevel)42, ""Hello"");/*-2*/
+                        /*0+*/logger.Log(LogLevel.Debug, new EventId(), ""Hello"");/*-0*/
+                        /*1+*/logger.Log(LogLevel.Debug, new EventId(), new Exception(), ""Hello"");/*-1*/
+                        /*2+*/logger.LogDebug(new EventId(), ""Hello"");/*-2*/
+                        /*3+*/logger.LogDebug(new EventId(), new Exception(), ""Hello"");/*-3*/
+                        /*4+*/logger.LogTrace("""");/*-4*/
+                        /*5+*/logger.Log((LogLevel)42, ""Hello"");/*-5*/
                     }
                 }
                 ";
@@ -211,15 +216,13 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
         {
             var targetSourceCode = @"
                 using Microsoft.Extensions.Logging;
-                using System;
 
                 namespace Example
                 {
                     /*0+*/static partial class Log/*-0*/
                     {
-
-                        // this here just to avoid a warning about superfluous using statements
-                        public static ILogger? Foo(Exception ex) { return null; }
+                        [LoggerMessage(0, LogLevel.Debug, ""Test2"")]
+                        static partial void Test2(ILogger logger);
                     }
                 }
                 ";
@@ -233,8 +236,8 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                     {
                         public static void TestMethod(ILogger logger)
                         {
-                            /*0+*/logger.LogInformation(""Hello"");/*-0*/
-                            /*1+*/logger.LogInformation(""Hello"");/*-1*/
+                            /*0+*/logger.LogInformation(""Test1"");/*-0*/
+                            /*1+*/logger.LogDebug(""Test2"");/*-1*/
                         }
                     }
                 }
@@ -256,12 +259,14 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             for (int i = 0; i < 3; i++)
             {
                 var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(invocationExpression);
-                Assert.NotNull(details);
-
                 var (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(methodName);
+                Assert.Equal("Test1", methodName);
                 Assert.False(existing);
+
+                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 1), CancellationToken.None).ConfigureAwait(false);
+                (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+                Assert.Equal("Test2", methodName);
+                Assert.True(existing);
             }
 
             proj.Dispose();

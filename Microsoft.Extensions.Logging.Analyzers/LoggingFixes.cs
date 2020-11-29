@@ -99,6 +99,9 @@ namespace Microsoft.Extensions.Logging.Analyzers
             return (invocationExpression, details);
         }
 
+        /// <summary>
+        /// Orchestrate all the work needed to fix an issue
+        /// </summary>
         internal static async Task<Solution> ApplyFix(Document invocationDoc, InvocationExpressionSyntax invocationExpression, FixDetails details, CancellationToken cancellationToken)
         {
             ClassDeclarationSyntax targetClass;
@@ -224,24 +227,30 @@ namespace {details.TargetNamespace}
             var loggerMessageAttribute = comp.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessageAttribute");
             if (loggerMessageAttribute is null)
             {
-                // strange we can't find the attribute, but supply a potential useful value instead
+                // strange that we can't find the attribute, but supply a potential useful value instead
                 return (details.TargetMethodName, false);
             }
+
+            var invocationArgList = MakeArgumentList(details, invocationOp);
 
             var conflict = false;
             foreach (var method in targetClass.Members.Where(m => m.IsKind(SyntaxKind.MethodDeclaration)).OfType<MethodDeclarationSyntax>())
             {
-                var sym = sm.GetDeclaredSymbol(method, cancellationToken);
-                var methodSymbol = (sym as IMethodSymbol)!;
+                var methodSymbol = sm.GetDeclaredSymbol(method, cancellationToken) as IMethodSymbol;
+                if (methodSymbol == null)
+                {
+                    // hmmm, this shouldn't happen should it?
+                    continue;
+                }
 
                 var matchName = (method.Identifier.ToString() == details.TargetMethodName);
 
-                var matchParams = invocationOp.Arguments.Length == methodSymbol.Parameters.Length;
+                var matchParams = invocationArgList.Count == methodSymbol.Parameters.Length;
                 if (matchParams)
                 {
-                    for (int i = 0; i < invocationOp.Arguments.Length; i++)
+                    for (int i = 0; i < invocationArgList.Count; i++)
                     {
-                        matchParams = invocationOp.Arguments[i].Type.Equals(methodSymbol.Parameters[i].Type, SymbolEqualityComparer.Default);
+                        matchParams = invocationArgList[i].Equals(methodSymbol.Parameters[i].Type, SymbolEqualityComparer.Default);
                         if (!matchParams)
                         {
                             break;
@@ -317,42 +326,9 @@ namespace {details.TargetNamespace}
             var comp = sm.Compilation;
             var gen = docEditor.Generator;
 
-            var parameters = new List<SyntaxNode>();
-
-            parameters.Add(gen.ParameterDeclaration("logger", gen.TypeExpression(invocationOp.Arguments[0].Value.Type)));
-            if (details.ExceptionParamIndex >= 0)
-            {
-                parameters.Add(gen.ParameterDeclaration("exception", gen.TypeExpression(invocationOp.Arguments[details.ExceptionParamIndex].Value.Type)));
-            }
-
-            var paramsArg = invocationOp.Arguments[details.ArgsParamIndex];
-            if (paramsArg != null)
-            {
-                var arrayCreation = paramsArg.Value as IArrayCreationOperation;
-                var index = 0;
-                foreach (var e in arrayCreation!.Initializer.ElementValues)
-                {
-                    foreach (var d in e.Descendants())
-                    {
-                        string name;
-                        if (index < details.MessageArgs.Count)
-                        {
-                            name = details.MessageArgs[index];
-                        }
-                        else
-                        {
-                            name = $"arg{index}";
-                        }
-
-                        parameters.Add(gen.ParameterDeclaration(name, gen.TypeExpression(d.Type)));
-                        index++;
-                    }
-                }
-            }
-
             var logMethod = gen.MethodDeclaration(
                                 details.TargetMethodName,
-                                parameters,
+                                MakeParameterList(details, invocationOp, gen),
                                 accessibility: Accessibility.Internal,
                                 modifiers: DeclarationModifiers.Partial | DeclarationModifiers.Static);
 
@@ -378,6 +354,9 @@ namespace {details.TargetNamespace}
             return solEditor.GetChangedSolution();
         }
 
+        /// <summary>
+        /// Given a LoggerExtensions method invocation, produce a parameter list for the corresponding generated logging method
+        /// </summary>
         private static IReadOnlyList<SyntaxNode> MakeParameterList(
             FixDetails details,
             IInvocationOperation invocationOp,
@@ -417,6 +396,37 @@ namespace {details.TargetNamespace}
             }
 
             return parameters;
+        }
+
+        /// <summary>
+        /// Given a LoggerExtensions method invocation, produce an argument list in the shape of a corresponding generated logging method
+        /// </summary>
+        private static IReadOnlyList<ITypeSymbol> MakeArgumentList(FixDetails details, IInvocationOperation invocationOp)
+        {
+            var args = new List<ITypeSymbol>();
+
+            args.Add(invocationOp.Arguments[0].Value.Type);
+            if (details.ExceptionParamIndex >= 0)
+            {
+                args.Add(invocationOp.Arguments[details.ExceptionParamIndex].Value.Type);
+            }
+
+            var paramsArg = invocationOp.Arguments[details.ArgsParamIndex];
+            if (paramsArg != null)
+            {
+                var arrayCreation = paramsArg.Value as IArrayCreationOperation;
+                var index = 0;
+                foreach (var e in arrayCreation!.Initializer.ElementValues)
+                {
+                    foreach (var d in e.Descendants())
+                    {
+                        args.Add(d.Type);
+                        index++;
+                    }
+                }
+            }
+
+            return args;
         }
 
         /// <summary>
