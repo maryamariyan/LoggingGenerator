@@ -43,6 +43,7 @@ General
 
 Generator
 
+* Add unit tests
 * Support nullable message parameter types
 * Support extension method syntax for logging methods
 * The Microsoft.Extensions.Logging.Extras assembly is only temporary. The types in here should go to the Microsoft.Extensions.Logging.Abstractions assembly
@@ -54,12 +55,11 @@ Analyzer
 
 Fixer
 
-* Generate a comment above the logging method sig
-* Handle cases where the message string is a const
-* Pick a different filename for the generated log file if the project already contains a file by that name.
-* Pick a different method name if the target class already contains a method by that name
-* If the target class is in the same file as the legacy call site, then things get confused
-* Add unit tests
+* Add more unit tests
+* Pick a different method name if the target class already contains a method with a matching signature
+* Reuse an existing logging method if one exists with the same signature.
+* Don't generate a new method if an exact match already exists
+* BUG: If the target class is in the same file as the legacy call site, then things get confused
 
 ## Example
 

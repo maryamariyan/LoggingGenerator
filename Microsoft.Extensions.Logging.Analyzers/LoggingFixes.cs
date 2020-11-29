@@ -10,7 +10,6 @@ namespace Microsoft.Extensions.Logging.Analyzers
     using Microsoft.CodeAnalysis.Editing;
     using Microsoft.CodeAnalysis.Operations;
     using Microsoft.CodeAnalysis.Text;
-    using System;
     using System.Collections.Generic;
     using System.Collections.Immutable;
     using System.Composition;
@@ -59,25 +58,25 @@ namespace Microsoft.Extensions.Logging.Analyzers
             var loggerExtensions = comp.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
             if (loggerExtensions == null)
             {
-                // should't happen, we only get called for calls on this type
+                // shouldn't happen, we only get called for methods on this type
                 return (null, null);
             }
 
-            var op = sm.GetOperation(invocationExpression, cancellationToken);
-            if (op is not IInvocationOperation invocation)
+            var invocationOp = sm.GetOperation(invocationExpression, cancellationToken) as IInvocationOperation;
+            if (invocationOp == null) 
             {
                 // shouldn't happen, we're dealing with an invocation expression
                 return (null, null);
             }
 
-            var method = invocation.TargetMethod;
+            var method = invocationOp.TargetMethod;
             if (method == null)
             {
                 // shouldn't happen, we should only be called with a known target method
                 return (null, null);
             }
 
-            var details = new FixDetails(method, invocation, invocationDoc.Project.DefaultNamespace);
+            var details = new FixDetails(method, invocationOp, invocationDoc.Project.DefaultNamespace, invocationDoc.Project.Documents);
 
             if (string.IsNullOrWhiteSpace(details.Message))
             {
@@ -116,30 +115,29 @@ namespace Microsoft.Extensions.Logging.Analyzers
             // find the doc and invocation in the current solution
             (invocationDoc, invocationExpression) = await Remap(sol, invocationDocId, invocationExpression).ConfigureAwait(false);
 
-            if (cancellationToken.IsCancellationRequested)
+            var methodName = details.TargetMethodName;
+
+            // determine the final name of the logging method and whether we need to generate it or not
+//            var (methodName, existing) = await GetFinalTargetMethodName(targetDoc, targetClass, invocationDoc, invocationExpression, details, cancellationToken).ConfigureAwait(false);
+
+            // if the target method doesn't already exist, go make it
+//            if (!existing)
             {
-                return originalSolution;
-            }
+                // generate the logging method signature in the target class
+                sol = await InsertLoggingMethodSignature(targetDoc, targetClass, invocationDoc, invocationExpression, details, cancellationToken).ConfigureAwait(false);
 
-            // generate the logging method signature in the target class
-            sol = await InsertLoggingMethodSignature(targetDoc, targetClass, invocationDoc, invocationExpression, details, cancellationToken).ConfigureAwait(false);
-
-            // find the doc and invocation in the current solution
-            (invocationDoc, invocationExpression) = await Remap(sol, invocationDocId, invocationExpression).ConfigureAwait(false);
-
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return originalSolution;
+                // find the doc and invocation in the current solution
+                (invocationDoc, invocationExpression) = await Remap(sol, invocationDocId, invocationExpression).ConfigureAwait(false);
             }
 
             // rewrite the call site to invoke the generated logging method
-            sol = await RewriteLoggingCall(invocationDoc, invocationExpression, details, cancellationToken).ConfigureAwait(false);
+            sol = await RewriteLoggingCall(invocationDoc, invocationExpression, details, methodName, cancellationToken).ConfigureAwait(false);
 
             return sol;
         }
 
         /// <summary>
-        /// Remaps an a invocation expression to a new doc
+        /// Remaps an invocation expression to a new doc
         /// </summary>
         private static async Task<(Document, InvocationExpressionSyntax)> Remap(Solution sol, DocumentId docId, InvocationExpressionSyntax invocationExpression)
         {
@@ -150,7 +148,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
         }
 
         /// <summary>
-        /// FInds the class into which to create the logging method signature, or creates it if it doesn't exist
+        /// Finds the class into which to create the logging method signature, or creates it if it doesn't exist
         /// </summary>
         internal static async Task<(Solution, ClassDeclarationSyntax, Document)> GetOrMakeTargetClass(Project proj, FixDetails details, CancellationToken cancellationToken)
         {
@@ -205,11 +203,114 @@ namespace {details.TargetNamespace}
             }
         }
 
-        internal static async Task<Solution> InsertLoggingMethodSignature(Document targetDoc, ClassDeclarationSyntax targetClass,
-            Document invocationDoc, InvocationExpressionSyntax invocationExpression, FixDetails details, CancellationToken cancellationToken)
+        /// <summary>
+        /// Get the final name of the target method. If there's an existing method with the right 
+        /// message, level, and argument types, we just use that. Otherwise, we create a new method.
+        /// </summary>
+        internal static async Task<(string methodName, bool existing)> GetFinalTargetMethodName(
+            Document targetDoc,
+            ClassDeclarationSyntax targetClass,
+            Document invocationDoc,
+            InvocationExpressionSyntax invocationExpression,
+            FixDetails details,
+            CancellationToken cancellationToken)
         {
             var invocationSM = (await invocationDoc.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
-            var invocation = (invocationSM.GetOperation(invocationExpression, cancellationToken) as IInvocationOperation)!;
+            var invocationOp = (invocationSM.GetOperation(invocationExpression, cancellationToken) as IInvocationOperation)!;
+
+            var docEditor = await DocumentEditor.CreateAsync(targetDoc, cancellationToken).ConfigureAwait(false);
+            var sm = docEditor.SemanticModel;
+            var comp = sm.Compilation;
+            var gen = docEditor.Generator;
+
+            var loggerMessageAttribute = comp.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessageAttribute");
+            if (loggerMessageAttribute is null)
+            {
+                // strange we can't find the attribute, but supply a potential useful value instead
+                return (details.TargetMethodName, false);
+            }
+
+            var conflict = false;
+            foreach (var method in targetClass.Members.Where(m => m.IsKind(SyntaxKind.MethodDeclaration)).OfType<MethodDeclarationSyntax>())
+            {
+                var methodSymbol = (sm.GetSymbolInfo(method, cancellationToken).Symbol as IMethodSymbol)!;
+
+                var matchName = (method.Identifier.ToString() == details.TargetMethodName);
+
+                var matchParams = invocationOp.Arguments.Length == methodSymbol.Parameters.Length;
+                if (matchParams)
+                {
+                    for (int i = 0; i < invocationOp.Arguments.Length; i++)
+                    {
+                        matchParams = invocationOp.Arguments[i].Type.Equals(methodSymbol.Parameters[i].Type, SymbolEqualityComparer.Default);
+                        if (!matchParams)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+                if (matchName && matchParams)
+                {
+                    conflict = true;
+                }
+
+                foreach (var mal in method.AttributeLists)
+                {
+                    foreach (var ma in mal.Attributes)
+                    {
+                        var maSymbolInfo = sm.GetSymbolInfo(ma, cancellationToken);
+                        if (maSymbolInfo.Symbol is IMethodSymbol ms && loggerMessageAttribute.Equals(ms.ContainingType, SymbolEqualityComparer.Default))
+                        {
+                            var arg = ma.ArgumentList!.Arguments[1];
+                            var level = (int)sm.GetConstantValue(arg.Expression, cancellationToken).Value!;
+
+                            arg = ma.ArgumentList.Arguments[2];
+                            var message = sm.GetConstantValue(arg.Expression, cancellationToken).ToString();
+
+                            var matchMessage = (message == details.Message);
+                            var matchLevel = level switch
+                            {
+                                0 => details.Level == "Trace",
+                                1 => details.Level == "Debug",
+                                2 => details.Level == "Information",
+                                3 => details.Level == "Warning",
+                                4 => details.Level == "Error",
+                                5 => details.Level == "Critical",
+                                _ => false,
+                            };
+
+                            if (matchLevel && matchMessage && matchParams)
+                            {
+                                // found a match, use this one
+                                return (method.Identifier.ToString(), true);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (conflict)
+            {
+                // can't use the target name, since it conflicts with something else
+                return (details.TargetMethodName + "42", false);
+            }
+
+            return (details.TargetMethodName, false);
+        }
+
+        internal static async Task<Solution> InsertLoggingMethodSignature(
+            Document targetDoc,
+            ClassDeclarationSyntax targetClass,
+            Document invocationDoc,
+            InvocationExpressionSyntax invocationExpression,
+            FixDetails details,
+            CancellationToken cancellationToken)
+        {
+            var invocationSM = (await invocationDoc.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
+            var invocationOp = (invocationSM.GetOperation(invocationExpression, cancellationToken) as IInvocationOperation)!;
 
             var solEditor = new SolutionEditor(targetDoc.Project.Solution);
             var docEditor = await solEditor.GetDocumentEditorAsync(targetDoc.Id, cancellationToken).ConfigureAwait(false);
@@ -218,17 +319,14 @@ namespace {details.TargetNamespace}
             var gen = docEditor.Generator;
 
             var parameters = new List<SyntaxNode>();
-            var templateArgs = details.MessageArgs;
 
-            int eventId = CalcEventId(comp, targetClass, cancellationToken);
-
-            parameters.Add(gen.ParameterDeclaration("logger", gen.TypeExpression(invocation.Arguments[0].Value.Type)));
+            parameters.Add(gen.ParameterDeclaration("logger", gen.TypeExpression(invocationOp.Arguments[0].Value.Type)));
             if (details.ExceptionParamIndex >= 0)
             {
-                parameters.Add(gen.ParameterDeclaration("exception", gen.TypeExpression(invocation.Arguments[details.ExceptionParamIndex].Value.Type)));
+                parameters.Add(gen.ParameterDeclaration("exception", gen.TypeExpression(invocationOp.Arguments[details.ExceptionParamIndex].Value.Type)));
             }
 
-            var paramsArg = invocation.Arguments[details.ArgsIndex];
+            var paramsArg = invocationOp.Arguments[details.ArgsIndex];
             if (paramsArg != null)
             {
                 var arrayCreation = paramsArg.Value as IArrayCreationOperation;
@@ -238,9 +336,9 @@ namespace {details.TargetNamespace}
                     foreach (var d in e.Descendants())
                     {
                         string name;
-                        if (index < templateArgs.Count)
+                        if (index < details.MessageArgs.Count)
                         {
-                            name = templateArgs[index];
+                            name = details.MessageArgs[index];
                         }
                         else
                         {
@@ -262,16 +360,64 @@ namespace {details.TargetNamespace}
             var attr = gen.Attribute(
                 gen.TypeExpression(comp.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessageAttribute")),
                 new[] {
-                    gen.LiteralExpression(eventId),
+                    gen.LiteralExpression(CalcEventId(comp, targetClass, cancellationToken)),
                     gen.MemberAccessExpression(gen.TypeExpression(comp.GetTypeByMetadataName("Microsoft.Extensions.Logging.LogLevel")), details.Level),
                     gen.LiteralExpression(details.Message),
                 });
 
             logMethod = gen.AddAttributes(logMethod, attr);
 
+            var comment = SyntaxFactory.ParseLeadingTrivia($@"
+/// <summary>
+/// Logs `{EscapeMessageString(details.Message)}` at `{details.Level}` level.
+/// </summary>
+");
+            logMethod = logMethod.WithLeadingTrivia(comment);
+
             docEditor.AddMember(targetClass, logMethod);
 
             return solEditor.GetChangedSolution();
+        }
+
+        private static IReadOnlyList<SyntaxNode> MakeParameterList(
+            FixDetails details,
+            IInvocationOperation invocationOp,
+            SyntaxGenerator gen)
+        {
+            var parameters = new List<SyntaxNode>();
+
+            parameters.Add(gen.ParameterDeclaration("logger", gen.TypeExpression(invocationOp.Arguments[0].Value.Type)));
+            if (details.ExceptionParamIndex >= 0)
+            {
+                parameters.Add(gen.ParameterDeclaration("exception", gen.TypeExpression(invocationOp.Arguments[details.ExceptionParamIndex].Value.Type)));
+            }
+
+            var paramsArg = invocationOp.Arguments[details.ArgsIndex];
+            if (paramsArg != null)
+            {
+                var arrayCreation = paramsArg.Value as IArrayCreationOperation;
+                var index = 0;
+                foreach (var e in arrayCreation!.Initializer.ElementValues)
+                {
+                    foreach (var d in e.Descendants())
+                    {
+                        string name;
+                        if (index < details.MessageArgs.Count)
+                        {
+                            name = details.MessageArgs[index];
+                        }
+                        else
+                        {
+                            name = $"arg{index}";
+                        }
+
+                        parameters.Add(gen.ParameterDeclaration(name, gen.TypeExpression(d.Type)));
+                        index++;
+                    }
+                }
+            }
+
+            return parameters;
         }
 
         /// <summary>
@@ -314,8 +460,12 @@ namespace {details.TargetNamespace}
             return max + 1;
         }
 
-        private static async Task<Solution> RewriteLoggingCall(Document doc, InvocationExpressionSyntax invocationExpression,
-            FixDetails details, CancellationToken cancellationToken)
+        private static async Task<Solution> RewriteLoggingCall(
+            Document doc,
+            InvocationExpressionSyntax invocationExpression,
+            FixDetails details,
+            string methodName,
+            CancellationToken cancellationToken)
         {
             var solEditor = new SolutionEditor(doc.Project.Solution);
             var docEditor = await solEditor.GetDocumentEditorAsync(doc.Id, cancellationToken).ConfigureAwait(false);
@@ -345,12 +495,20 @@ namespace {details.TargetNamespace}
             argList.RemoveAt(details.MessageParamIndex);
 
             var call = gen.InvocationExpression(
-                gen.MemberAccessExpression(gen.TypeExpression(comp.GetTypeByMetadataName(details.FullTargetClassName)), details.TargetMethodName),
+                gen.MemberAccessExpression(gen.TypeExpression(comp.GetTypeByMetadataName(details.FullTargetClassName)), methodName),
                 argList);
 
             docEditor.ReplaceNode(invocationExpression, call.WithTriviaFrom(invocationExpression));
 
             return solEditor.GetChangedSolution();
+        }
+
+        private static string EscapeMessageString(string message)
+        {
+            return message
+                .Replace("\n", "\\n")
+                .Replace("\r", "\\r")
+                .Replace("\"", "\\\"");
         }
     }
 }

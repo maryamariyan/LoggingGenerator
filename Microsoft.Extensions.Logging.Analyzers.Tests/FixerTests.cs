@@ -17,7 +17,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
     public class FixerTests
     {
         [Fact]
-        public async Task Basic()
+        public async Task FixDetailTest()
         {
             var programText = @"
                 using Microsoft.Extensions.Logging;
@@ -25,6 +25,9 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
 
                 class Container
                 {
+                    private const string Message = ""Hello"";
+                    private const LogLevel Level = LogLevel.Debug; 
+
                     public void Test(ILogger logger)
                     {
                         /*1+*/logger.LogTrace(""Hello"");/*-1*/
@@ -61,6 +64,10 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                         /*26+*/logger.Log(LogLevel.Warning, ""Hello {arg1}"", ""One"");/*-26*/
                         /*27+*/logger.Log(LogLevel.Error, new Exception(), ""Hello"");/*-27*/
                         /*28+*/logger.Log(LogLevel.Critical, new Exception(), ""Hello {arg1}"", ""One"");/*-28*/
+                        /*29+*/logger.Log(LogLevel.Trace, ""Hello"");/*-29*/
+                        /*30+*/logger.Log(LogLevel.Information, ""Hello"");/*-30*/
+
+                        /*31+*/logger.Log(Level, Message);/*-31*/
                     }
                 }
                 ";
@@ -209,6 +216,54 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                     targetClassName: "Log",
                     targetMethodName: "HelloArg1",
                     messageArgs: new[] { "arg1" });
+
+                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, 29), CancellationToken.None).ConfigureAwait(false);
+                Assert.NotNull(invocationExpression);
+                Assert.NotNull(details);
+                AssertEqual(details!, 2,
+                    exceptionParamIndex: -1,
+                    eventIdParamIndex: -1,
+                    logLevelParamIndex: 1,
+                    argsIndex: 3,
+                    message: "Hello",
+                    level: "Trace",
+                    targetFilename: "Log.cs",
+                    targetNamespace: "",
+                    targetClassName: "Log",
+                    targetMethodName: "Hello",
+                    messageArgs: Array.Empty<string>());
+
+                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, 30), CancellationToken.None).ConfigureAwait(false);
+                Assert.NotNull(invocationExpression);
+                Assert.NotNull(details);
+                AssertEqual(details!, 2,
+                    exceptionParamIndex: -1,
+                    eventIdParamIndex: -1,
+                    logLevelParamIndex: 1,
+                    argsIndex: 3,
+                    message: "Hello",
+                    level: "Information",
+                    targetFilename: "Log.cs",
+                    targetNamespace: "",
+                    targetClassName: "Log",
+                    targetMethodName: "Hello",
+                    messageArgs: Array.Empty<string>());
+
+                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, 31), CancellationToken.None).ConfigureAwait(false);
+                Assert.NotNull(invocationExpression);
+                Assert.NotNull(details);
+                AssertEqual(details!, 2,
+                    exceptionParamIndex: -1,
+                    eventIdParamIndex: -1,
+                    logLevelParamIndex: 1,
+                    argsIndex: 3,
+                    message: "Hello",
+                    level: "Debug",
+                    targetFilename: "Log.cs",
+                    targetNamespace: "",
+                    targetClassName: "Log",
+                    targetMethodName: "Hello",
+                    messageArgs: Array.Empty<string>());
             }
             disposable.Dispose();
         }
@@ -240,6 +295,35 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             Assert.Equal(targetClassName, fd.TargetClassName);
             Assert.Equal(targetMethodName, fd.TargetMethodName);
             Assert.Equal(messageArgs, fd.MessageArgs);
+        }
+
+        [Fact]
+        public async void CheckIfCanFixTest()
+        {
+            var programText = @"
+                using Microsoft.Extensions.Logging;
+
+                class Container
+                {
+                    const string Message = ""Hello"";
+
+                    public void Test(ILogger logger)
+                    {
+                        /*1+*/logger.LogTrace(new EventId(), ""Hello"");/*-1*/
+                        /*2+*/logger.LogTrace("""");/*-2*/
+                        /*3+*/logger.Log((LogLevel)42, ""Hello"");/*-3*/
+                    }
+                }
+                ";
+
+            var (doc, disposable) = await TestFixer(programText).ConfigureAwait(false);
+            for (int i = 1; i < 4; i++)
+            {
+                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, i), CancellationToken.None).ConfigureAwait(false);
+                Assert.Null(invocationExpression);
+                Assert.Null(details);
+            }
+            disposable.Dispose();
         }
 
         private static async Task AssertNoDiagnostics(Project project)

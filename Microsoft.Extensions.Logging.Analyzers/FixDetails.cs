@@ -3,6 +3,7 @@
 namespace Microsoft.Extensions.Logging.Analyzers
 {
     using Microsoft.CodeAnalysis;
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Operations;
     using System.Collections.Generic;
     using System.Linq;
@@ -27,19 +28,34 @@ namespace Microsoft.Extensions.Logging.Analyzers
         public readonly string TargetMethodName;
         public readonly IReadOnlyList<string> MessageArgs;
 
-        public FixDetails(IMethodSymbol method, IInvocationOperation invocation, string? defaultNamespace)
+        public FixDetails(
+            IMethodSymbol method,
+            IInvocationOperation invocationOp,
+            string? defaultNamespace,
+            IEnumerable<Document> docs)
         {
             (MessageParamIndex, ExceptionParamIndex, EventIdParamIndex, LogLevelParamIndex, ArgsIndex) = IdentifyParameters(method);
 
-            var lit = invocation.Arguments[MessageParamIndex].Descendants().First() as ILiteralOperation;
-            if (lit != null)
+            switch (invocationOp.Arguments[MessageParamIndex].Descendants().First())
             {
-                Message = (lit.ConstantValue.Value as string)!;
+                case ILiteralOperation lit:
+                    if (lit.ConstantValue.HasValue)
+                    {
+                        Message = lit.ConstantValue.Value as string ?? string.Empty;
+                    }
+                    break;
+
+                case IFieldReferenceOperation fieldRef:
+                    if (fieldRef.ConstantValue.HasValue)
+                    {
+                        Message = fieldRef.ConstantValue.Value as string ?? string.Empty;
+                    }
+                    break;
             }
 
             if (LogLevelParamIndex > 0)
             {
-                var fieldRef = invocation.Arguments[LogLevelParamIndex].Descendants().First() as IFieldReferenceOperation;
+                var fieldRef = invocationOp.Arguments[LogLevelParamIndex].Descendants().First() as IFieldReferenceOperation;
                 if (fieldRef != null)
                 {
                     Level = ((int)(fieldRef.ConstantValue.Value!)) switch
@@ -59,9 +75,9 @@ namespace Microsoft.Extensions.Logging.Analyzers
                 Level = method.Name.Substring(3);
             };
 
-            TargetFilename = "Log.cs";
+            TargetFilename = FindUniqueFilename(docs);
             TargetNamespace = defaultNamespace ?? string.Empty;
-            TargetClassName = "Log";
+            TargetClassName = "LogX";
             TargetMethodName = DeriveName(Message);
             MessageArgs = ExtractTemplateArgs(Message);
         }
@@ -77,6 +93,29 @@ namespace Microsoft.Extensions.Logging.Analyzers
 
                 return $"{TargetNamespace}.{TargetClassName}";
             }
+        }
+
+        private static string FindUniqueFilename(IEnumerable<Document> docs)
+        {
+            var targetName = "Log.cs";
+            int count = 2;
+            bool duplicate;
+            do
+            {
+                duplicate = false;
+                foreach (var doc in docs)
+                {
+                    if (doc.Name == targetName)
+                    {
+                        duplicate = true;
+                        targetName = $"Log{count}.cs";
+                        count++;
+                        break;
+                    }
+                }
+            } while (duplicate);
+
+            return targetName;
         }
 
         /// <summary>

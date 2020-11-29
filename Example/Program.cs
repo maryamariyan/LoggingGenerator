@@ -55,6 +55,12 @@ namespace Example
 
     class Program
     {
+        public static void Test(ILogger logger)
+        {
+            LogX.Hello(logger);
+            //            logger.LogInformation("Hello");
+        }
+
         static void Main()
         {
             using var loggerFactory = LoggerFactory.Create(builder =>
