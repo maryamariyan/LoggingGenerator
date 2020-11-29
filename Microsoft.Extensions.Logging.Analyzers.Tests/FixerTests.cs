@@ -4,6 +4,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
 {
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
+    using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Text;
     using System;
     using System.Collections.Generic;
@@ -13,13 +14,33 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
     using System.Threading;
     using System.Threading.Tasks;
     using Xunit;
+    using Xunit.Abstractions;
 
     public class FixerTests
     {
-        [Fact]
-        public async Task FixDetailTest()
+        class DetailsData
         {
-            var programText = @"
+            public string Level = string.Empty;
+            public string TargetMethodName = string.Empty;
+            public string Message = string.Empty;
+            public int ExceptionParamIndex = -1;
+            public int ArgsParamIndex = -1;
+            public int MessageParamIndex = -1;
+            public int LogLevelParamIndex = -1;
+            public string[] MessageArgs = Array.Empty<string>();
+        }
+
+        private readonly ITestOutputHelper _output;
+
+        public FixerTests(ITestOutputHelper output)
+        {
+            _output = output;
+        }
+
+        [Fact]
+        public async Task DetailsTest()
+        {
+            var invocationSourceCode = @"
                 using Microsoft.Extensions.Logging;
                 using System;
 
@@ -30,277 +51,128 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
 
                     public void Test(ILogger logger)
                     {
-                        /*1+*/logger.LogTrace(""Hello"");/*-1*/
-                        /*2+*/logger.LogTrace(""Hello {arg1}"", ""One"");/*-2*/
-                        /*3+*/logger.LogTrace(new Exception(), ""Hello"");/*-3*/
-                        /*4+*/logger.LogTrace(new Exception(), ""Hello {arg1}"", ""One"");/*-4*/
+                        /*0+*/logger.LogTrace(""Hello"");/*-0*/
+                        /*1+*/logger.LogTrace(""Hello {arg1}"", ""One"");/*-1*/
+                        /*2+*/logger.LogTrace(new Exception(), ""Hello"");/*-2*/
+                        /*3+*/logger.LogTrace(new Exception(), ""Hello {arg1}"", ""One"");/*-3*/
 
-                        /*5+*/logger.LogDebug(""Hello"");/*-5*/
-                        /*6+*/logger.LogDebug(""Hello {arg1}"", ""One"");/*-6*/
-                        /*7+*/logger.LogDebug(new Exception(), ""Hello"");/*-7*/
-                        /*8+*/logger.LogDebug(new Exception(), ""Hello {arg1}"", ""One"");/*-8*/
+                        /*4+*/logger.LogDebug(""Hello"");/*-4*/
+                        /*5+*/logger.LogDebug(""Hello {arg1}"", ""One"");/*-5*/
+                        /*6+*/logger.LogDebug(new Exception(), ""Hello"");/*-6*/
+                        /*7+*/logger.LogDebug(new Exception(), ""Hello {arg1}"", ""One"");/*-7*/
 
-                        /*9+*/logger.LogInformation(""Hello"");/*-9*/
-                        /*10+*/logger.LogInformation(""Hello {arg1}"", ""One"");/*-10*/
-                        /*11+*/logger.LogInformation(new Exception(), ""Hello"");/*-11*/
-                        /*12+*/logger.LogInformation(new Exception(), ""Hello {arg1}"", ""One"");/*-12*/
+                        /*8+*/logger.LogInformation(""Hello"");/*-8*/
+                        /*9+*/logger.LogInformation(""Hello {arg1}"", ""One"");/*-9*/
+                        /*10+*/logger.LogInformation(new Exception(), ""Hello"");/*-10*/
+                        /*11+*/logger.LogInformation(new Exception(), ""Hello {arg1}"", ""One"");/*-11*/
 
-                        /*13+*/logger.LogWarning(""Hello"");/*-13*/
-                        /*14+*/logger.LogWarning(""Hello {arg1}"", ""One"");/*-14*/
-                        /*15+*/logger.LogWarning(new Exception(), ""Hello"");/*-15*/
-                        /*16+*/logger.LogWarning(new Exception(), ""Hello {arg1}"", ""One"");/*-16*/
+                        /*12+*/logger.LogWarning(""Hello"");/*-12*/
+                        /*13+*/logger.LogWarning(""Hello {arg1}"", ""One"");/*-13*/
+                        /*14+*/logger.LogWarning(new Exception(), ""Hello"");/*-14*/
+                        /*15+*/logger.LogWarning(new Exception(), ""Hello {arg1}"", ""One"");/*-15*/
 
-                        /*17+*/logger.LogError(""Hello"");/*-17*/
-                        /*18+*/logger.LogError(""Hello {arg1}"", ""One"");/*-18*/
-                        /*19+*/logger.LogError(new Exception(), ""Hello"");/*-19*/
-                        /*20+*/logger.LogError(new Exception(), ""Hello {arg1}"", ""One"");/*-20*/
+                        /*16+*/logger.LogError(""Hello"");/*-16*/
+                        /*17+*/logger.LogError(""Hello {arg1}"", ""One"");/*-17*/
+                        /*18+*/logger.LogError(new Exception(), ""Hello"");/*-18*/
+                        /*19+*/logger.LogError(new Exception(), ""Hello {arg1}"", ""One"");/*-19*/
 
-                        /*21+*/logger.LogCritical(""Hello"");/*-21*/
-                        /*22+*/logger.LogCritical(""Hello {arg1}"", ""One"");/*-22*/
-                        /*23+*/logger.LogCritical(new Exception(), ""Hello"");/*-23*/
-                        /*24+*/logger.LogCritical(new Exception(), ""Hello {arg1}"", ""One"");/*-24*/
+                        /*20+*/logger.LogCritical(""Hello"");/*-20*/
+                        /*21+*/logger.LogCritical(""Hello {arg1}"", ""One"");/*-21*/
+                        /*22+*/logger.LogCritical(new Exception(), ""Hello"");/*-22*/
+                        /*23+*/logger.LogCritical(new Exception(), ""Hello {arg1}"", ""One"");/*-23*/
 
+                        /*24+*/logger.Log(LogLevel.Trace, ""Hello"");/*-24*/
                         /*25+*/logger.Log(LogLevel.Debug, ""Hello"");/*-25*/
-                        /*26+*/logger.Log(LogLevel.Warning, ""Hello {arg1}"", ""One"");/*-26*/
-                        /*27+*/logger.Log(LogLevel.Error, new Exception(), ""Hello"");/*-27*/
-                        /*28+*/logger.Log(LogLevel.Critical, new Exception(), ""Hello {arg1}"", ""One"");/*-28*/
-                        /*29+*/logger.Log(LogLevel.Trace, ""Hello"");/*-29*/
-                        /*30+*/logger.Log(LogLevel.Information, ""Hello"");/*-30*/
+                        /*26+*/logger.Log(LogLevel.Information, ""Hello"");/*-26*/
+                        /*27+*/logger.Log(LogLevel.Warning, ""Hello {arg1}"", ""One"");/*-27*/
+                        /*28+*/logger.Log(LogLevel.Error, new Exception(), ""Hello"");/*-28*/
+                        /*29+*/logger.Log(LogLevel.Critical, new Exception(), ""Hello {arg1}"", ""One"");/*-29*/
 
-                        /*31+*/logger.Log(Level, Message);/*-31*/
+                        /*30+*/logger.Log(Level, Message);/*-30*/
                     }
                 }
                 ";
 
-            var (doc, disposable) = await TestFixer(programText).ConfigureAwait(false);
-
-            for (int i = 0; i < 23; i += 4)
+            var nothing = Array.Empty<string>();
+            var one = new[] { "arg1" };
+            var data = new[]
             {
-                var level = (i / 4) switch
-                {
-                    0 => "Trace",
-                    1 => "Debug",
-                    2 => "Information",
-                    3 => "Warning",
-                    4 => "Error",
-                    5 => "Critical",
-                    _ => "Impossible",
-                };
+                new DetailsData { Level = "Trace",       TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Trace",       TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Trace",       TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 2, ExceptionParamIndex = 1,  ArgsParamIndex = 3 },
+                new DetailsData { Level = "Trace",       TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 2, ExceptionParamIndex = 1,  ArgsParamIndex = 3 },
+                new DetailsData { Level = "Debug",       TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Debug",       TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Debug",       TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 2, ExceptionParamIndex = 1,  ArgsParamIndex = 3 },
+                new DetailsData { Level = "Debug",       TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 2, ExceptionParamIndex = 1,  ArgsParamIndex = 3 },
+                new DetailsData { Level = "Information", TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Information", TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Information", TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 2, ExceptionParamIndex = 1,  ArgsParamIndex = 3 },
+                new DetailsData { Level = "Information", TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 2, ExceptionParamIndex = 1,  ArgsParamIndex = 3 },
+                new DetailsData { Level = "Warning",     TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Warning",     TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Warning",     TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 2, ExceptionParamIndex = 1,  ArgsParamIndex = 3 },
+                new DetailsData { Level = "Warning",     TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 2, ExceptionParamIndex = 1,  ArgsParamIndex = 3 },
+                new DetailsData { Level = "Error",       TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Error",       TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Error",       TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 2, ExceptionParamIndex = 1,  ArgsParamIndex = 3 },
+                new DetailsData { Level = "Error",       TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 2, ExceptionParamIndex = 1,  ArgsParamIndex = 3 },
+                new DetailsData { Level = "Critical",    TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Critical",    TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Critical",    TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 2, ExceptionParamIndex = 1,  ArgsParamIndex = 3 },
+                new DetailsData { Level = "Critical",    TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 2, ExceptionParamIndex = 1,  ArgsParamIndex = 3 },
 
-                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, i+1), CancellationToken.None).ConfigureAwait(false);
+                new DetailsData { Level = "Trace",       TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 2, ExceptionParamIndex = -1, ArgsParamIndex = 3, LogLevelParamIndex = 1 },
+                new DetailsData { Level = "Debug",       TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 2, ExceptionParamIndex = -1, ArgsParamIndex = 3, LogLevelParamIndex = 1 },
+                new DetailsData { Level = "Information", TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 2, ExceptionParamIndex = -1, ArgsParamIndex = 3, LogLevelParamIndex = 1 },
+                new DetailsData { Level = "Warning",     TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 2, ExceptionParamIndex = -1, ArgsParamIndex = 3, LogLevelParamIndex = 1 },
+                new DetailsData { Level = "Error",       TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 3, ExceptionParamIndex = 2,  ArgsParamIndex = 4, LogLevelParamIndex = 1 },
+                new DetailsData { Level = "Critical",    TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 3, ExceptionParamIndex = 2,  ArgsParamIndex = 4, LogLevelParamIndex = 1 },
+
+                new DetailsData { Level = "Debug",       TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 2, ExceptionParamIndex = -1, ArgsParamIndex = 3, LogLevelParamIndex = 1 },
+            };
+
+            var proj = RoslynTestUtils
+                .CreateTestProject()
+                    .WithLoggingBoilerplate()
+                    .WithDocument("invocation.cs", invocationSourceCode);
+
+            await proj.CommitChanges().ConfigureAwait(false);
+            var invocationDoc = proj.FindDocument("invocation.cs");
+
+            var targetClassName = "Log";
+            for (int i = 0; i < data.Length; i++)
+            {
+                _output.WriteLine($"Iteration {i}");
+
+                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
                 Assert.NotNull(invocationExpression);
                 Assert.NotNull(details);
-                AssertEqual(details!, 1,
-                    exceptionParamIndex: -1,
-                    eventIdParamIndex: -1,
-                    logLevelParamIndex: -1,
-                    argsIndex: 2,
-                    message: "Hello",
-                    level: level,
-                    targetFilename: "Log.cs",
-                    targetNamespace: "",
-                    targetClassName: "Log",
-                    targetMethodName: "Hello",
-                    messageArgs: Array.Empty<string>());
 
-                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, i + 2), CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(invocationExpression);
-                Assert.NotNull(details);
-                AssertEqual(details!, 1,
-                    exceptionParamIndex: -1,
-                    eventIdParamIndex: -1,
-                    logLevelParamIndex: -1,
-                    argsIndex: 2,
-                    message: "Hello {arg1}",
-                    level: level,
-                    targetFilename: "Log.cs",
-                    targetNamespace: "",
-                    targetClassName: "Log",
-                    targetMethodName: "HelloArg1",
-                    messageArgs: new[] { "arg1" });
+                Assert.Equal(data[i].MessageParamIndex, details!.MessageParamIndex);
+                Assert.Equal(data[i].ExceptionParamIndex, details.ExceptionParamIndex);
+                Assert.Equal(data[i].ArgsParamIndex, details.ArgsParamIndex);
+                Assert.Equal(data[i].Message, details.Message);
+                Assert.Equal(data[i].Level, details.Level);
+                Assert.Equal(data[i].TargetMethodName, details.TargetMethodName);
+                Assert.Equal(data[i].MessageArgs, details.MessageArgs);
+                Assert.Equal(data[i].LogLevelParamIndex, details.LogLevelParamIndex);
 
-                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, i + 3), CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(invocationExpression);
-                Assert.NotNull(details);
-                AssertEqual(details!, 2,
-                    exceptionParamIndex: 1,
-                    eventIdParamIndex: -1,
-                    logLevelParamIndex: -1,
-                    argsIndex: 3,
-                    message: "Hello",
-                    level: level,
-                    targetFilename: "Log.cs",
-                    targetNamespace: "",
-                    targetClassName: "Log",
-                    targetMethodName: "Hello",
-                    messageArgs: Array.Empty<string>());
-
-                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, i + 4), CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(invocationExpression);
-                Assert.NotNull(details);
-                AssertEqual(details!, 2,
-                    exceptionParamIndex: 1,
-                    eventIdParamIndex: -1,
-                    logLevelParamIndex: -1,
-                    argsIndex: 3,
-                    message: "Hello {arg1}",
-                    level: level,
-                    targetFilename: "Log.cs",
-                    targetNamespace: "",
-                    targetClassName: "Log",
-                    targetMethodName: "HelloArg1",
-                    messageArgs: new[] { "arg1" });
+                Assert.Equal(targetClassName, details.TargetClassName);
+                Assert.Equal("Log.cs", details.TargetFilename);
+                Assert.Equal("", details.TargetNamespace);
+                Assert.Equal(-1, details.EventIdParamIndex);
             }
 
-            {
-                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, 25), CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(invocationExpression);
-                Assert.NotNull(details);
-                AssertEqual(details!, 2,
-                    exceptionParamIndex: -1,
-                    eventIdParamIndex: -1,
-                    logLevelParamIndex: 1,
-                    argsIndex: 3,
-                    message: "Hello",
-                    level: "Debug",
-                    targetFilename: "Log.cs",
-                    targetNamespace: "",
-                    targetClassName: "Log",
-                    targetMethodName: "Hello",
-                    messageArgs: Array.Empty<string>());
-
-                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, 26), CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(invocationExpression);
-                Assert.NotNull(details);
-                AssertEqual(details!, 2,
-                    exceptionParamIndex: -1,
-                    eventIdParamIndex: -1,
-                    logLevelParamIndex: 1,
-                    argsIndex: 3,
-                    message: "Hello {arg1}",
-                    level: "Warning",
-                    targetFilename: "Log.cs",
-                    targetNamespace: "",
-                    targetClassName: "Log",
-                    targetMethodName: "HelloArg1",
-                    messageArgs: new[] { "arg1" });
-
-                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, 27), CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(invocationExpression);
-                Assert.NotNull(details);
-                AssertEqual(details!, 3,
-                    exceptionParamIndex: 2,
-                    eventIdParamIndex: -1,
-                    logLevelParamIndex: 1,
-                    argsIndex: 4,
-                    message: "Hello",
-                    level: "Error",
-                    targetFilename: "Log.cs",
-                    targetNamespace: "",
-                    targetClassName: "Log",
-                    targetMethodName: "Hello",
-                    messageArgs: Array.Empty<string>());
-
-                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, 28), CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(invocationExpression);
-                Assert.NotNull(details);
-                AssertEqual(details!, 3,
-                    exceptionParamIndex: 2,
-                    eventIdParamIndex: -1,
-                    logLevelParamIndex: 1,
-                    argsIndex: 4,
-                    message: "Hello {arg1}",
-                    level: "Critical",
-                    targetFilename: "Log.cs",
-                    targetNamespace: "",
-                    targetClassName: "Log",
-                    targetMethodName: "HelloArg1",
-                    messageArgs: new[] { "arg1" });
-
-                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, 29), CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(invocationExpression);
-                Assert.NotNull(details);
-                AssertEqual(details!, 2,
-                    exceptionParamIndex: -1,
-                    eventIdParamIndex: -1,
-                    logLevelParamIndex: 1,
-                    argsIndex: 3,
-                    message: "Hello",
-                    level: "Trace",
-                    targetFilename: "Log.cs",
-                    targetNamespace: "",
-                    targetClassName: "Log",
-                    targetMethodName: "Hello",
-                    messageArgs: Array.Empty<string>());
-
-                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, 30), CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(invocationExpression);
-                Assert.NotNull(details);
-                AssertEqual(details!, 2,
-                    exceptionParamIndex: -1,
-                    eventIdParamIndex: -1,
-                    logLevelParamIndex: 1,
-                    argsIndex: 3,
-                    message: "Hello",
-                    level: "Information",
-                    targetFilename: "Log.cs",
-                    targetNamespace: "",
-                    targetClassName: "Log",
-                    targetMethodName: "Hello",
-                    messageArgs: Array.Empty<string>());
-
-                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, 31), CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(invocationExpression);
-                Assert.NotNull(details);
-                AssertEqual(details!, 2,
-                    exceptionParamIndex: -1,
-                    eventIdParamIndex: -1,
-                    logLevelParamIndex: 1,
-                    argsIndex: 3,
-                    message: "Hello",
-                    level: "Debug",
-                    targetFilename: "Log.cs",
-                    targetNamespace: "",
-                    targetClassName: "Log",
-                    targetMethodName: "Hello",
-                    messageArgs: Array.Empty<string>());
-            }
-            disposable.Dispose();
-        }
-
-        private static void AssertEqual(
-            FixDetails fd,
-            int messageParamIndex,
-            int exceptionParamIndex,
-            int eventIdParamIndex,
-            int logLevelParamIndex,
-            int argsIndex,
-            string message,
-            string level,
-            string targetFilename,
-            string? targetNamespace,
-            string targetClassName,
-            string targetMethodName,
-            IReadOnlyList<string> messageArgs)
-        {
-            Assert.Equal(messageParamIndex, fd.MessageParamIndex);
-            Assert.Equal(exceptionParamIndex, fd.ExceptionParamIndex);
-            Assert.Equal(eventIdParamIndex, fd.EventIdParamIndex);
-            Assert.Equal(logLevelParamIndex, fd.LogLevelParamIndex);
-            Assert.Equal(argsIndex, fd.ArgsIndex);
-            Assert.Equal(message, fd.Message);
-            Assert.Equal(level, fd.Level);
-            Assert.Equal(targetFilename, fd.TargetFilename);
-            Assert.Equal(targetNamespace, fd.TargetNamespace);
-            Assert.Equal(targetClassName, fd.TargetClassName);
-            Assert.Equal(targetMethodName, fd.TargetMethodName);
-            Assert.Equal(messageArgs, fd.MessageArgs);
+            proj.Dispose();
         }
 
         [Fact]
         public async void CheckIfCanFixTest()
         {
-            var programText = @"
+            // we just deal with the few edge cases not tackled by DetailsTest above
+
+            var invocationSourceCode = @"
                 using Microsoft.Extensions.Logging;
 
                 class Container
@@ -309,21 +181,90 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
 
                     public void Test(ILogger logger)
                     {
-                        /*1+*/logger.LogTrace(new EventId(), ""Hello"");/*-1*/
-                        /*2+*/logger.LogTrace("""");/*-2*/
-                        /*3+*/logger.Log((LogLevel)42, ""Hello"");/*-3*/
+                        /*0+*/logger.LogTrace(new EventId(), ""Hello"");/*-0*/
+                        /*1+*/logger.LogTrace("""");/*-1*/
+                        /*2+*/logger.Log((LogLevel)42, ""Hello"");/*-2*/
                     }
                 }
                 ";
 
-            var (doc, disposable) = await TestFixer(programText).ConfigureAwait(false);
-            for (int i = 1; i < 4; i++)
+            var proj = RoslynTestUtils
+                .CreateTestProject()
+                    .WithLoggingBoilerplate()
+                    .WithDocument("invocation.cs", invocationSourceCode);
+
+            await proj.CommitChanges().ConfigureAwait(false);
+            var invocationDoc = proj.FindDocument("invocation.cs");
+
+            for (int i = 0; i < 3; i++)
             {
-                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(doc, MakeSpan(programText, i), CancellationToken.None).ConfigureAwait(false);
+                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
                 Assert.Null(invocationExpression);
                 Assert.Null(details);
             }
-            disposable.Dispose();
+
+            proj.Dispose();
+        }
+
+        [Fact]
+        public async void GetFinalTargetMethodNameTest()
+        {
+            var targetSourceCode = @"
+                using Microsoft.Extensions.Logging;
+                using System;
+
+                namespace Example
+                {
+                    /*0+*/static partial class Log/*-0*/
+                    {
+
+                        // this here just to avoid a warning about superfluous using statements
+                        public static ILogger? Foo(Exception ex) { return null; }
+                    }
+                }
+                ";
+
+            var invocationSourceCode = @"
+                using Microsoft.Extensions.Logging;
+
+                namespace Example
+                {
+                    public class TestClass
+                    {
+                        public static void TestMethod(ILogger logger)
+                        {
+                            /*0+*/logger.LogInformation(""Hello"");/*-0*/
+                            /*1+*/logger.LogInformation(""Hello"");/*-1*/
+                        }
+                    }
+                }
+                ";
+
+            var proj = RoslynTestUtils
+                .CreateTestProject()
+                    .WithLoggingBoilerplate()
+                    .WithDocument("target.cs", targetSourceCode)
+                    .WithDocument("invocation.cs", invocationSourceCode);
+
+            await proj.CommitChanges().ConfigureAwait(false);
+            var targetDoc = proj.FindDocument("target.cs");
+            var invocationDoc = proj.FindDocument("invocation.cs");
+
+            var targetRoot = await targetDoc.GetSyntaxRootAsync(CancellationToken.None).ConfigureAwait(false);
+            var targetClass = targetRoot!.FindNode(RoslynTestUtils.MakeSpan(targetSourceCode, 0)) as ClassDeclarationSyntax;
+
+            for (int i = 0; i < 3; i++)
+            {
+                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+                Assert.NotNull(invocationExpression);
+                Assert.NotNull(details);
+
+                var (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+                Assert.NotNull(methodName);
+                Assert.False(existing);
+            }
+
+            proj.Dispose();
         }
 
         private static async Task AssertNoDiagnostics(Project project)
@@ -346,14 +287,11 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             return new TextSpan(start, end - start);
         }
 
-        private static async Task<(Document, IDisposable)> TestFixer(string programText)
+        private static async Task<(Document, IDisposable)> TestFixer(string sourceCode)
         {
             var ws = new AdhocWorkspace();
             var sol = ws.AddSolution(SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create()));
-
-            var proj = sol.AddProject("test", "test.dll", "C#");
-
-            proj = proj
+            var proj = sol.AddProject("test", "test.dll", "C#")
                 .WithMetadataReferences(new[] { MetadataReference.CreateFromFile(Assembly.GetAssembly(typeof(System.Exception))!.Location) })
                 .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(NullableContextOptions.Enable));
 
@@ -424,7 +362,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                 }
                 ");
 
-            doc = doc.Project.AddDocument("test.cs", programText);
+            doc = doc.Project.AddDocument("test.cs", sourceCode);
 
             proj = doc.Project;
             sol = proj.Solution;

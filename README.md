@@ -56,9 +56,6 @@ Analyzer
 Fixer
 
 * Add more unit tests
-* Pick a different method name if the target class already contains a method with a matching signature
-* Reuse an existing logging method if one exists with the same signature.
-* Don't generate a new method if an exact match already exists
 * BUG: If the target class is in the same file as the legacy call site, then things get confused
 
 ## Example

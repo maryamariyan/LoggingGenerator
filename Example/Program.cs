@@ -57,8 +57,8 @@ namespace Example
     {
         public static void Test(ILogger logger)
         {
-            LogX.Hello(logger);
-            //            logger.LogInformation("Hello");
+//            logger.LogInformation("Hello");
+ //           logger.LogInformation("Hello");
         }
 
         static void Main()

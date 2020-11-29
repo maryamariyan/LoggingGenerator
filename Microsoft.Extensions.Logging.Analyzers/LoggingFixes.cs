@@ -115,13 +115,11 @@ namespace Microsoft.Extensions.Logging.Analyzers
             // find the doc and invocation in the current solution
             (invocationDoc, invocationExpression) = await Remap(sol, invocationDocId, invocationExpression).ConfigureAwait(false);
 
-            var methodName = details.TargetMethodName;
-
             // determine the final name of the logging method and whether we need to generate it or not
-//            var (methodName, existing) = await GetFinalTargetMethodName(targetDoc, targetClass, invocationDoc, invocationExpression, details, cancellationToken).ConfigureAwait(false);
+            var (methodName, existing) = await GetFinalTargetMethodName(targetDoc, targetClass, invocationDoc, invocationExpression, details, cancellationToken).ConfigureAwait(false);
 
             // if the target method doesn't already exist, go make it
-//            if (!existing)
+            if (!existing)
             {
                 // generate the logging method signature in the target class
                 sol = await InsertLoggingMethodSignature(targetDoc, targetClass, invocationDoc, invocationExpression, details, cancellationToken).ConfigureAwait(false);
@@ -233,7 +231,8 @@ namespace {details.TargetNamespace}
             var conflict = false;
             foreach (var method in targetClass.Members.Where(m => m.IsKind(SyntaxKind.MethodDeclaration)).OfType<MethodDeclarationSyntax>())
             {
-                var methodSymbol = (sm.GetSymbolInfo(method, cancellationToken).Symbol as IMethodSymbol)!;
+                var sym = sm.GetDeclaredSymbol(method, cancellationToken);
+                var methodSymbol = (sym as IMethodSymbol)!;
 
                 var matchName = (method.Identifier.ToString() == details.TargetMethodName);
 
@@ -326,7 +325,7 @@ namespace {details.TargetNamespace}
                 parameters.Add(gen.ParameterDeclaration("exception", gen.TypeExpression(invocationOp.Arguments[details.ExceptionParamIndex].Value.Type)));
             }
 
-            var paramsArg = invocationOp.Arguments[details.ArgsIndex];
+            var paramsArg = invocationOp.Arguments[details.ArgsParamIndex];
             if (paramsArg != null)
             {
                 var arrayCreation = paramsArg.Value as IArrayCreationOperation;
@@ -392,7 +391,7 @@ namespace {details.TargetNamespace}
                 parameters.Add(gen.ParameterDeclaration("exception", gen.TypeExpression(invocationOp.Arguments[details.ExceptionParamIndex].Value.Type)));
             }
 
-            var paramsArg = invocationOp.Arguments[details.ArgsIndex];
+            var paramsArg = invocationOp.Arguments[details.ArgsParamIndex];
             if (paramsArg != null)
             {
                 var arrayCreation = paramsArg.Value as IArrayCreationOperation;

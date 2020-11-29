@@ -3,8 +3,8 @@
 namespace Microsoft.Extensions.Logging.Analyzers
 {
     using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Operations;
+    using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
@@ -19,7 +19,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
         public readonly int ExceptionParamIndex;
         public readonly int EventIdParamIndex;
         public readonly int LogLevelParamIndex;
-        public readonly int ArgsIndex;
+        public readonly int ArgsParamIndex;
         public readonly string Message = string.Empty;
         public readonly string Level = string.Empty;
         public readonly string TargetFilename;
@@ -34,7 +34,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
             string? defaultNamespace,
             IEnumerable<Document> docs)
         {
-            (MessageParamIndex, ExceptionParamIndex, EventIdParamIndex, LogLevelParamIndex, ArgsIndex) = IdentifyParameters(method);
+            (MessageParamIndex, ExceptionParamIndex, EventIdParamIndex, LogLevelParamIndex, ArgsParamIndex) = IdentifyParameters(method);
 
             switch (invocationOp.Arguments[MessageParamIndex].Descendants().First())
             {
@@ -77,7 +77,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
 
             TargetFilename = FindUniqueFilename(docs);
             TargetNamespace = defaultNamespace ?? string.Empty;
-            TargetClassName = "LogX";
+            TargetClassName = "Log";
             TargetMethodName = DeriveName(Message);
             MessageArgs = ExtractTemplateArgs(Message);
         }
@@ -105,7 +105,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
                 duplicate = false;
                 foreach (var doc in docs)
                 {
-                    if (doc.Name == targetName)
+                    if (string.Equals(doc.Name, targetName, StringComparison.OrdinalIgnoreCase))
                     {
                         duplicate = true;
                         targetName = $"Log{count}.cs";
