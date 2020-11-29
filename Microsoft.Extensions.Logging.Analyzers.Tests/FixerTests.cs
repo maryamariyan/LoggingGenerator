@@ -146,7 +146,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             {
                 _output.WriteLine($"Iteration {i}");
 
-                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
+                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
                 Assert.NotNull(invocationExpression);
                 Assert.NotNull(details);
 
@@ -179,8 +179,6 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
 
                 class Container
                 {
-                    const string Message = ""Hello"";
-
                     public void Test(ILogger logger)
                     {
                         /*0+*/logger.Log(LogLevel.Debug, new EventId(), ""Hello"");/*-0*/
@@ -201,12 +199,76 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             await proj.CommitChanges().ConfigureAwait(false);
             var invocationDoc = proj.FindDocument("invocation.cs");
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 6; i++)
             {
                 var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
                 Assert.Null(invocationExpression);
                 Assert.Null(details);
             }
+
+            proj.Dispose();
+        }
+
+        [Fact]
+        public async void FilenameConflict()
+        {
+            var invocationSourceCode = @"
+                using Microsoft.Extensions.Logging;
+
+                class Container
+                {
+                    public void Test(ILogger logger)
+                    {
+                        /*0+*/logger.LogDebug(""Hello"");/*-0*/
+                    }
+                }
+                ";
+
+            var proj = RoslynTestUtils
+                .CreateTestProject()
+                    .WithLoggingBoilerplate()
+                    .WithDocument("log.cs", invocationSourceCode);
+
+            await proj.CommitChanges().ConfigureAwait(false);
+            var invocationDoc = proj.FindDocument("log.cs");
+
+            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            Assert.Equal("Log2.cs", details!.TargetFilename);
+            Assert.Equal("", details.TargetNamespace);
+            Assert.Equal("Log", details.TargetClassName);
+            Assert.Equal("Log", details.FullTargetClassName);
+
+            proj.Dispose();
+        }
+
+        [Fact]
+        public async void InNamespace()
+        {
+            var invocationSourceCode = @"
+                using Microsoft.Extensions.Logging;
+
+                class Container
+                {
+                    public void Test(ILogger logger)
+                    {
+                        /*0+*/logger.LogDebug(""Hello"");/*-0*/
+                    }
+                }
+                ";
+
+            var proj = RoslynTestUtils
+                .CreateTestProject()
+                    .WithLoggingBoilerplate()
+                    .WithDocument("invocation.cs", invocationSourceCode)
+                    .WithDefaultNamespace("Namespace");
+
+            await proj.CommitChanges().ConfigureAwait(false);
+            var invocationDoc = proj.FindDocument("invocation.cs");
+
+            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            Assert.Equal("Log.cs", details!.TargetFilename);
+            Assert.Equal("Namespace", details.TargetNamespace);
+            Assert.Equal("Namespace.Log", details.FullTargetClassName);
 
             proj.Dispose();
         }
@@ -221,8 +283,14 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                 {
                     /*0+*/static partial class Log/*-0*/
                     {
-                        [LoggerMessage(0, LogLevel.Debug, ""Test2"")]
-                        static partial void Test2(ILogger logger);
+                        [LoggerMessage(0, LogLevel.Debug, ""TestB"")]
+                        static partial void TestB(ILogger logger);
+
+                        [LoggerMessage(1, LogLevel.Debug, ""TestCX"")]
+                        static partial void TestC(ILogger logger);
+
+                        [LoggerMessage(2, LogLevel.Debug, ""TestD {arg1}"")]
+                        static partial void TestDArg1(ILogger logger, int arg1);
                     }
                 }
                 ";
@@ -236,8 +304,12 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                     {
                         public static void TestMethod(ILogger logger)
                         {
-                            /*0+*/logger.LogInformation(""Test1"");/*-0*/
-                            /*1+*/logger.LogDebug(""Test2"");/*-1*/
+                            /*0+*/logger.LogInformation(""TestA"");/*-0*/
+                            /*1+*/logger.LogDebug(""TestB"");/*-1*/
+                            /*2+*/logger.LogWarning(""TestB"");/*-2*/
+                            /*3+*/logger.LogWarning(""TestB"", 42);/*-3*/
+                            /*4+*/logger.LogDebug(""TestC"");/*-4*/
+                            /*5+*/logger.LogDebug(""TestD {arg1}"", ""Foo"");/*-5*/
                         }
                     }
                 }
@@ -256,126 +328,79 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             var targetRoot = await targetDoc.GetSyntaxRootAsync(CancellationToken.None).ConfigureAwait(false);
             var targetClass = targetRoot!.FindNode(RoslynTestUtils.MakeSpan(targetSourceCode, 0)) as ClassDeclarationSyntax;
 
-            for (int i = 0; i < 3; i++)
-            {
-                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
-                var (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
-                Assert.Equal("Test1", methodName);
-                Assert.False(existing);
+            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            var (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            Assert.Equal("TestA", methodName);
+            Assert.False(existing);
 
-                (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 1), CancellationToken.None).ConfigureAwait(false);
-                (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
-                Assert.Equal("Test2", methodName);
-                Assert.True(existing);
-            }
+            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 1), CancellationToken.None).ConfigureAwait(false);
+            (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            Assert.Equal("TestB", methodName);
+            Assert.True(existing);
+
+            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 2), CancellationToken.None).ConfigureAwait(false);
+            (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            Assert.Equal("TestB2", methodName);
+            Assert.False(existing);
+
+            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 3), CancellationToken.None).ConfigureAwait(false);
+            (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            Assert.Equal("TestB", methodName);
+            Assert.False(existing);
+
+            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 4), CancellationToken.None).ConfigureAwait(false);
+            (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            Assert.Equal("TestC2", methodName);
+            Assert.False(existing);
+
+            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 5), CancellationToken.None).ConfigureAwait(false);
+            (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            Assert.Equal("TestDArg1", methodName);
+            Assert.False(existing);
 
             proj.Dispose();
         }
 
-        private static async Task AssertNoDiagnostics(Project project)
+        [Fact]
+        public async void TestApplyFix()
         {
-            foreach (var doc in project.Documents)
-            {
-                var sm = await doc.GetSemanticModelAsync(CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(sm);
-                Assert.Empty(sm!.GetDiagnostics());
-            }
-        }
+            var invocationSourceCode = @"
+                using Microsoft.Extensions.Logging;
 
-        /// <summary>
-        /// Looks for /*N+*/ and /*-N*/ markers in a text file and creates a TextSpan containing the enclosed text.
-        /// </summary>
-        private static TextSpan MakeSpan(string text, int spanNum)
-        {
-            int start = text.IndexOf($"/*{spanNum}+*/", StringComparison.Ordinal) + 6;
-            int end = text.IndexOf($"/*-{spanNum}*/", StringComparison.Ordinal) - 1;
-            return new TextSpan(start, end - start);
-        }
-
-        private static async Task<(Document, IDisposable)> TestFixer(string sourceCode)
-        {
-            var ws = new AdhocWorkspace();
-            var sol = ws.AddSolution(SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create()));
-            var proj = sol.AddProject("test", "test.dll", "C#")
-                .WithMetadataReferences(new[] { MetadataReference.CreateFromFile(Assembly.GetAssembly(typeof(System.Exception))!.Location) })
-                .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithNullableContextOptions(NullableContextOptions.Enable));
-
-            var doc = proj.AddDocument("boilerplate.cs", @"
-                namespace Microsoft.Extensions.Logging
+                namespace Example
                 {
-                    using System;
-
-                    public enum LogLevel
+                    public class TestClass
                     {
-                        Trace,
-                        Debug,
-                        Information,
-                        Warning,
-                        Error,
-                        Critical,
-                    }
-
-                    [System.AttributeUsage(System.AttributeTargets.Method, AllowMultiple = false)]
-                    public sealed class LoggerMessageAttribute : System.Attribute
-                    {
-                        public LoggerMessageAttribute(int eventId, LogLevel level, string message) => (EventId, Level, Message) = (eventId, level, message);
-                        public int EventId { get; set; }
-                        public string? EventName { get; set; }
-                        public LogLevel Level { get; set; }
-                        public string Message { get; set; }
-                    }
-
-                    public interface ILogger
-                    {
-                    }
-
-                    public struct EventId
-                    {
-                    }
-
-                    public static class LoggerExtensions
-                    {
-                        public static void Log(this ILogger logger, LogLevel logLevel, Exception exception, string message, params object[] args){}
-                        public static void Log(this ILogger logger, LogLevel logLevel, EventId eventId, string message, params object[] args){}
-                        public static void Log(this ILogger logger, LogLevel logLevel, string message, params object[] args){}
-                        public static void Log(this ILogger logger, LogLevel logLevel, EventId eventId, Exception exception, string message, params object[] args){}
-                        public static void LogCritical(this ILogger logger, string message, params object[] args){}
-                        public static void LogCritical(this ILogger logger, Exception exception, string message, params object[] args){}
-                        public static void LogCritical(this ILogger logger, EventId eventId, string message, params object[] args){}
-                        public static void LogCritical(this ILogger logger, EventId eventId, Exception exception, string message, params object[] args){}
-                        public static void LogDebug(this ILogger logger, EventId eventId, Exception exception, string message, params object[] args){}
-                        public static void LogDebug(this ILogger logger, EventId eventId, string message, params object[] args){}
-                        public static void LogDebug(this ILogger logger, Exception exception, string message, params object[] args){}
-                        public static void LogDebug(this ILogger logger, string message, params object[] args){}
-                        public static void LogError(this ILogger logger, string message, params object[] args){}
-                        public static void LogError(this ILogger logger, Exception exception, string message, params object[] args){}
-                        public static void LogError(this ILogger logger, EventId eventId, Exception exception, string message, params object[] args){}
-                        public static void LogError(this ILogger logger, EventId eventId, string message, params object[] args){}
-                        public static void LogInformation(this ILogger logger, EventId eventId, string message, params object[] args){}
-                        public static void LogInformation(this ILogger logger, Exception exception, string message, params object[] args){}
-                        public static void LogInformation(this ILogger logger, EventId eventId, Exception exception, string message, params object[] args){}
-                        public static void LogInformation(this ILogger logger, string message, params object[] args){}
-                        public static void LogTrace(this ILogger logger, string message, params object[] args){}
-                        public static void LogTrace(this ILogger logger, Exception exception, string message, params object[] args){}
-                        public static void LogTrace(this ILogger logger, EventId eventId, string message, params object[] args){}
-                        public static void LogTrace(this ILogger logger, EventId eventId, Exception exception, string message, params object[] args){}
-                        public static void LogWarning(this ILogger logger, EventId eventId, string message, params object[] args){}
-                        public static void LogWarning(this ILogger logger, EventId eventId, Exception exception, string message, params object[] args){}
-                        public static void LogWarning(this ILogger logger, string message, params object[] args){}
-                        public static void LogWarning(this ILogger logger, Exception exception, string message, params object[] args){}
+                        public static void TestMethod(ILogger logger)
+                        {
+                            /*0+*/logger.LogInformation(""TestA"");/*-0*/
+                            /*1+*/logger.LogDebug(""TestB"");/*-1*/
+                            /*2+*/logger.LogWarning(""TestB"");/*-2*/
+                            /*3+*/logger.LogWarning(""TestB"", 42);/*-3*/
+                            /*4+*/logger.LogDebug(""TestC"");/*-4*/
+                            /*5+*/logger.LogDebug(""TestD {arg1}"", ""Foo"");/*-5*/
+                        }
                     }
                 }
-                ");
+                ";
 
-            doc = doc.Project.AddDocument("test.cs", sourceCode);
+            var proj = RoslynTestUtils
+                .CreateTestProject()
+                    .WithLoggingBoilerplate()
+                    .WithDocument("invocation.cs", invocationSourceCode);
 
-            proj = doc.Project;
-            sol = proj.Solution;
-            Assert.True(ws.TryApplyChanges(sol));
+            await proj.CommitChanges().ConfigureAwait(false);
+            var invocationDoc = proj.FindDocument("invocation.cs");
 
-            await AssertNoDiagnostics(proj).ConfigureAwait(false);
+            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            var sol = await LoggingFixes.ApplyFix(invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
 
-            return (doc, ws);
+            proj = sol.GetProject(proj.Id)!;
+            invocationDoc = proj.FindDocument("invocation.cs");
+            var targetDoc = proj.FindDocument("Log.cs");
+
+            Assert.NotNull(invocationDoc);
+            Assert.NotNull(targetDoc);
         }
     }
 }

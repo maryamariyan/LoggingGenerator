@@ -161,7 +161,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
                 var allClasses = allNodes.Where(d => d.IsKind(SyntaxKind.ClassDeclaration)).OfType<ClassDeclarationSyntax>();
                 foreach (var cl in allClasses)
                 {
-                    if (details.TargetNamespace != null)
+                    if (!string.IsNullOrEmpty(details.TargetNamespace))
                     {
                         var parent = cl.Parent as NamespaceDeclarationSyntax;
                         if (parent == null || parent.Name.ToString() != details.TargetNamespace)
@@ -185,7 +185,7 @@ static partial class {details.TargetClassName}
 }}
 ";
 
-                if (details.TargetNamespace != null)
+                if (!string.IsNullOrEmpty(details.TargetNamespace))
                 {
                     text = $@"
 using Microsoft.Extensions.Logging;
@@ -234,79 +234,86 @@ namespace {details.TargetNamespace}
             var invocationArgList = MakeArgumentList(details, invocationOp);
 
             var conflict = false;
-            foreach (var method in targetClass.Members.Where(m => m.IsKind(SyntaxKind.MethodDeclaration)).OfType<MethodDeclarationSyntax>())
+            var count = 2;
+            var methodName = "";
+            do
             {
-                var methodSymbol = sm.GetDeclaredSymbol(method, cancellationToken) as IMethodSymbol;
-                if (methodSymbol == null)
+                methodName = details.TargetMethodName;
+                if (conflict)
                 {
-                    // hmmm, this shouldn't happen should it?
-                    continue;
+                    methodName = $"{methodName}{count}";
+                    count++;
+                    conflict = false;
                 }
 
-                var matchName = (method.Identifier.ToString() == details.TargetMethodName);
-
-                var matchParams = invocationArgList.Count == methodSymbol.Parameters.Length;
-                if (matchParams)
+                foreach (var method in targetClass.Members.Where(m => m.IsKind(SyntaxKind.MethodDeclaration)).OfType<MethodDeclarationSyntax>())
                 {
-                    for (int i = 0; i < invocationArgList.Count; i++)
+                    var methodSymbol = sm.GetDeclaredSymbol(method, cancellationToken) as IMethodSymbol;
+                    if (methodSymbol == null)
                     {
-                        matchParams = invocationArgList[i].Equals(methodSymbol.Parameters[i].Type, SymbolEqualityComparer.Default);
-                        if (!matchParams)
-                        {
-                            break;
-                        }
+                        // hmmm, this shouldn't happen should it?
+                        continue;
                     }
-                }
 
-                if (matchName && matchParams)
-                {
-                    conflict = true;
-                }
+                    var matchName = (method.Identifier.ToString() == methodName);
 
-                foreach (var mal in method.AttributeLists)
-                {
-                    foreach (var ma in mal.Attributes)
+                    var matchParams = invocationArgList.Count == methodSymbol.Parameters.Length;
+                    if (matchParams)
                     {
-                        var maSymbolInfo = sm.GetSymbolInfo(ma, cancellationToken);
-                        if (maSymbolInfo.Symbol is IMethodSymbol ms && loggerMessageAttribute.Equals(ms.ContainingType, SymbolEqualityComparer.Default))
+                        for (int i = 0; i < invocationArgList.Count; i++)
                         {
-                            var arg = ma.ArgumentList!.Arguments[1];
-                            var level = (int)sm.GetConstantValue(arg.Expression, cancellationToken).Value!;
-
-                            arg = ma.ArgumentList.Arguments[2];
-                            var message = sm.GetConstantValue(arg.Expression, cancellationToken).ToString();
-
-                            var matchMessage = (message == details.Message);
-                            var matchLevel = level switch
+                            matchParams = invocationArgList[i].Equals(methodSymbol.Parameters[i].Type, SymbolEqualityComparer.Default);
+                            if (!matchParams)
                             {
-                                0 => details.Level == "Trace",
-                                1 => details.Level == "Debug",
-                                2 => details.Level == "Information",
-                                3 => details.Level == "Warning",
-                                4 => details.Level == "Error",
-                                5 => details.Level == "Critical",
-                                _ => false,
-                            };
-
-                            if (matchLevel && matchMessage && matchParams)
-                            {
-                                // found a match, use this one
-                                return (method.Identifier.ToString(), true);
+                                break;
                             }
+                        }
+                    }
 
-                            break;
+                    if (matchName && matchParams)
+                    {
+                        conflict = true;
+                    }
+
+                    foreach (var mal in method.AttributeLists)
+                    {
+                        foreach (var ma in mal.Attributes)
+                        {
+                            var maSymbolInfo = sm.GetSymbolInfo(ma, cancellationToken);
+                            if (maSymbolInfo.Symbol is IMethodSymbol ms && loggerMessageAttribute.Equals(ms.ContainingType, SymbolEqualityComparer.Default))
+                            {
+                                var arg = ma.ArgumentList!.Arguments[1];
+                                var level = (int)sm.GetConstantValue(arg.Expression, cancellationToken).Value!;
+
+                                arg = ma.ArgumentList.Arguments[2];
+                                var message = sm.GetConstantValue(arg.Expression, cancellationToken).ToString();
+
+                                var matchMessage = (message == details.Message);
+                                var matchLevel = level switch
+                                {
+                                    0 => details.Level == "Trace",
+                                    1 => details.Level == "Debug",
+                                    2 => details.Level == "Information",
+                                    3 => details.Level == "Warning",
+                                    4 => details.Level == "Error",
+                                    5 => details.Level == "Critical",
+                                    _ => false,
+                                };
+
+                                if (matchLevel && matchMessage && matchParams)
+                                {
+                                    // found a match, use this one
+                                    return (method.Identifier.ToString(), true);
+                                }
+
+                                break;
+                            }
                         }
                     }
                 }
-            }
+            } while (conflict);
 
-            if (conflict)
-            {
-                // can't use the target name, since it conflicts with something else
-                return (details.TargetMethodName + "42", false);
-            }
-
-            return (details.TargetMethodName, false);
+            return (methodName, false);
         }
 
         internal static async Task<Solution> InsertLoggingMethodSignature(

@@ -8,7 +8,7 @@ namespace Example
 
     class Program
     {
-#if true
+#if false
         public static void Test(ILogger logger)
         {
             logger.LogInformation("Hello");
