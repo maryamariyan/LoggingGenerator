@@ -40,6 +40,7 @@ with Roslyn will show red squiggles to the developer, which is sad.
 General
 
 * Add nuget packaging voodoo
+* What copyright/license should this stuff have?
 
 Generator
 
