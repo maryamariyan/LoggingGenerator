@@ -177,8 +177,10 @@ namespace Microsoft.Extensions.Logging.Analyzers
                 }
 
                 var text = $@"
+#pragma warning disable CS8019
 using Microsoft.Extensions.Logging;
 using System;
+#pragma warning restore CS8019
 
 static partial class {details.TargetClassName}
 {{
@@ -188,11 +190,13 @@ static partial class {details.TargetClassName}
                 if (!string.IsNullOrEmpty(details.TargetNamespace))
                 {
                     text = $@"
-using Microsoft.Extensions.Logging;
-using System;
-
 namespace {details.TargetNamespace}
 {{
+#pragma warning disable CS8019
+    using Microsoft.Extensions.Logging;
+    using System;
+#pragma warning restore CS8019
+
     static partial class {details.TargetClassName}
     {{
     }}

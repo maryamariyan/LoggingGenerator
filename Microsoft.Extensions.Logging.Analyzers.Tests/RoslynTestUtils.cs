@@ -31,15 +31,36 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             proj.Solution.Workspace.Dispose();
         }
 
-        public static async Task CommitChanges(this Project proj)
+        public static Task CommitChanges(this Project proj)
         {
             Assert.True(proj.Solution.Workspace.TryApplyChanges(proj.Solution));
+            return AssertNoDiagnostic(proj);
+        }
 
+        public static async Task AssertNoDiagnostic(this Project proj, params string[] ignorables)
+        {
             foreach (var doc in proj.Documents)
             {
                 var sm = await doc.GetSemanticModelAsync(CancellationToken.None).ConfigureAwait(false);
                 Assert.NotNull(sm);
-                Assert.Empty(sm!.GetDiagnostics());
+
+                foreach (var d in sm!.GetDiagnostics())
+                {
+                    bool ignore = false;
+                    if (ignorables != null)
+                    {
+                        foreach (var ig in ignorables)
+                        {
+                            if (d.Id == ig)
+                            {
+                                ignore = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    Assert.True(ignore);
+                }
             }
         }
 
