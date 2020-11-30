@@ -17,6 +17,14 @@ The Microsoft.Extensions.Logging.Generators project uses C# 9.0 source generator
 responsible for finding types annotated with the [LoggerExtensions] attribute and automatically generating the strongly-typed
 logging methods.
 
+## Current State
+
+This is a general proposal for how this functionality can be integrated into the main .NET distribution. This is why
+assemblies have the Microsoft.* prefix. If this doesn't get integrated into .NET, I'll change the assemblies to use
+a different naming scheme for general consumption.
+
+Anyway, feel free to use this as-is but there's not compatibility guarantee. Use at your own risks.
+
 ## Analyzer and Fixes
 
 The Microsoft.Extensions.Logging.Analyzers project contains an analyzer that produces a warning
@@ -44,9 +52,7 @@ General
 
 Generator
 
-* Add unit tests
-* Support nullable message parameter types
-* Support extension method syntax for logging methods
+* Add more unit tests
 * The Microsoft.Extensions.Logging.Extras assembly is only temporary. The types in here should go to the Microsoft.Extensions.Logging.Abstractions assembly
 * Get improved SemanticModel workaround from Jared
 
