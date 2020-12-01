@@ -23,7 +23,7 @@ This is a general proposal for how this functionality can be integrated into the
 assemblies have the Microsoft.* prefix. If this doesn't get integrated into .NET, I'll change the assemblies to use
 a different naming scheme for general consumption.
 
-Anyway, feel free to use this as-is but there's not compatibility guarantee. Use at your own risks.
+Anyway, feel free to use this as-is but there's no compatibility guarantee. Use at your own risks.
 
 ## Analyzer and Fixes
 
@@ -54,7 +54,6 @@ Generator
 
 * Add more unit tests
 * The Microsoft.Extensions.Logging.Extras assembly is only temporary. The types in here should go to the Microsoft.Extensions.Logging.Abstractions assembly
-* Get improved SemanticModel workaround from Jared
 
 Analyzer
 
