@@ -3,14 +3,9 @@
 namespace Microsoft.Extensions.Logging.Analyzers.Tests
 {
     using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Text;
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Reflection;
-    using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
     using Xunit;
@@ -210,6 +205,82 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
         }
 
         [Fact]
+        public async void MissingPreconditions()
+        {
+            // make sure the code is robust to missing preconditions
+
+            // rirst, a bogus span
+
+            var proj = RoslynTestUtils
+                .CreateTestProject()
+                    .WithDocument("invocation.cs", "class FooBar {}");
+
+            await proj.CommitChanges().ConfigureAwait(false);
+            var invocationDoc = proj.FindDocument("invocation.cs");
+
+            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, new TextSpan(0, 10), CancellationToken.None).ConfigureAwait(false);
+            Assert.Null(invocationExpression);
+            Assert.Null(details);
+
+            proj.Dispose();
+
+            // next, try without the logging types
+
+            var invocationSourceCode = @"
+                class Container
+                {
+                    public static void Test()
+                    {
+                        /*0+*/Test2();/*-0*/
+                    }
+
+                    public static void Test2() {}
+                }
+                ";
+
+            proj = RoslynTestUtils
+                .CreateTestProject()
+                    .WithDocument("invocation.cs", invocationSourceCode);
+
+            await proj.CommitChanges().ConfigureAwait(false);
+            invocationDoc = proj.FindDocument("invocation.cs");
+
+            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            Assert.Null(invocationExpression);
+            Assert.Null(details);
+
+            proj.Dispose();
+
+            // next, try a call to some random function
+
+            invocationSourceCode = @"
+                class Container
+                {
+                    public static void Test()
+                    {
+                        /*0+*/Test2();/*-0*/
+                    }
+
+                    public static void Test2() {}
+                }
+                ";
+
+            proj = RoslynTestUtils
+                .CreateTestProject()
+                    .WithLoggingBoilerplate()
+                    .WithDocument("invocation.cs", invocationSourceCode);
+
+            await proj.CommitChanges().ConfigureAwait(false);
+            invocationDoc = proj.FindDocument("invocation.cs");
+
+            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            Assert.Null(invocationExpression);
+            Assert.Null(details);
+
+            proj.Dispose();
+        }
+
+        [Fact]
         public async void FilenameConflict()
         {
             var invocationSourceCode = @"
@@ -373,6 +444,56 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
         }
 
         [Fact]
+        public async void ExistingTargetMethods()
+        {
+            var targetSourceCode = @"
+                using Microsoft.Extensions.Logging;
+
+                namespace Example
+                {
+                    static partial class Log
+                    {
+                        [LoggerMessage(41, LogLevel.Debug, ""TestA"")]
+                        static partial void TestA(ILogger logger);
+                    }
+                }
+                ";
+
+            var invocationSourceCode = @"
+                using Microsoft.Extensions.Logging;
+
+                namespace Example
+                {
+                    public class TestClass
+                    {
+                        public static void TestMethod(ILogger logger)
+                        {
+                            /*0+*/logger.LogDebug(""TestB"");/*-0*/
+                        }
+                    }
+                }
+                ";
+
+            var proj = RoslynTestUtils
+                .CreateTestProject()
+                    .WithLoggingBoilerplate()
+                    .WithDefaultNamespace("Example")
+                    .WithDocument("target.cs", targetSourceCode)
+                    .WithDocument("invocation.cs", invocationSourceCode);
+
+            await proj.CommitChanges().ConfigureAwait(false);
+            var targetDoc = proj.FindDocument("target.cs");
+            var invocationDoc = proj.FindDocument("invocation.cs");
+
+            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            var sol = await LoggingFixes.ApplyFix(invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+
+            // TODO: check that the generated method has an event id of 42
+
+            proj.Dispose();
+        }
+
+        [Fact]
         public async void TestApplyFix()
         {
             var invocationSourceCode = @"
@@ -397,6 +518,32 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                             /*9+*/logger.LogError(new Exception(), ""TestE"");/*-9*/
                             /*10+*/logger.LogCritical(""TestF"");/*-10*/
                             /*11+*/logger.LogCritical(new Exception(), ""TestF"");/*-11*/
+
+                            /*12+*/logger.LogTrace(""TestA"", 42);/*-12*/
+                            /*13+*/logger.LogTrace(new Exception(), ""TestA"", 42);/*-13*/
+                            /*14+*/logger.LogDebug(""TestB"", 42);/*-14*/
+                            /*15+*/logger.LogDebug(new Exception(), ""TestB"", 42);/*-15*/
+                            /*16+*/logger.LogInformation(""TestC"", 42);/*-16*/
+                            /*17+*/logger.LogInformation(new Exception(), ""TestC"", 42);/*-17*/
+                            /*18+*/logger.LogWarning(""TestD"", 42);/*-18*/
+                            /*19+*/logger.LogWarning(new Exception(), ""TestD"", 42);/*-19*/
+                            /*20+*/logger.LogError(""TestE"", 42);/*-20*/
+                            /*21+*/logger.LogError(new Exception(), ""TestE"", 42);/*-21*/
+                            /*22+*/logger.LogCritical(""TestF"", 42);/*-22*/
+                            /*23+*/logger.LogCritical(new Exception(), ""TestF"", 42);/*-23*/
+
+                            /*24+*/logger.Log(LogLevel.Trace, ""TestA"");/*-24*/
+                            /*25+*/logger.Log(LogLevel.Trace, new Exception(), ""TestA"");/*-25*/
+                            /*26+*/logger.Log(LogLevel.Debug, ""TestB"");/*-26*/
+                            /*27+*/logger.Log(LogLevel.Debug, new Exception(), ""TestB"");/*-27*/
+                            /*28+*/logger.Log(LogLevel.Information, ""TestC"");/*-28*/
+                            /*29+*/logger.Log(LogLevel.Information, new Exception(), ""TestC"");/*-29*/
+                            /*30+*/logger.Log(LogLevel.Warning, ""TestD"");/*-30*/
+                            /*31+*/logger.Log(LogLevel.Warning, new Exception(), ""TestD"");/*-31*/
+                            /*32+*/logger.Log(LogLevel.Error, ""TestE"");/*-32*/
+                            /*33+*/logger.Log(LogLevel.Error, new Exception(), ""TestE"");/*-33*/
+                            /*34+*/logger.Log(LogLevel.Critical, ""TestF"");/*-34*/
+                            /*35+*/logger.Log(LogLevel.Critical, new Exception(), ""TestF"");/*-35*/
                         }
                     }
                 }
@@ -410,7 +557,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             await proj.CommitChanges().ConfigureAwait(false);
 
             var invocationDoc = proj.FindDocument("invocation.cs");
-            for (int i = 0; i < 12; i++)
+            for (int i = 0; i < 36; i++)
             {
                 _output.WriteLine($"Iteration {i}");
 
@@ -426,6 +573,8 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
 
                 Assert.NotNull(invocationDoc2);
                 Assert.NotNull(targetDoc);
+
+                // TODO: need to validate the generated code!
 
                 await proj2.AssertNoDiagnostic("CS8795").ConfigureAwait(false);
             }

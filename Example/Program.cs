@@ -11,6 +11,7 @@ namespace Example
 #if false
         public static void Test(ILogger logger)
         {
+            logger.Log(LogLevel.Debug, "Hello");
             logger.LogInformation("Hello");
             logger.LogInformation("Hello");
         }

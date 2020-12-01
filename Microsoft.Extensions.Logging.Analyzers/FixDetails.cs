@@ -36,21 +36,24 @@ namespace Microsoft.Extensions.Logging.Analyzers
         {
             (MessageParamIndex, ExceptionParamIndex, EventIdParamIndex, LogLevelParamIndex, ArgsParamIndex) = IdentifyParameters(method);
 
-            switch (invocationOp.Arguments[MessageParamIndex].Descendants().First())
+            if (MessageParamIndex >= 0)
             {
-                case ILiteralOperation lit:
-                    if (lit.ConstantValue.HasValue)
-                    {
-                        Message = lit.ConstantValue.Value as string ?? string.Empty;
-                    }
-                    break;
+                switch (invocationOp.Arguments[MessageParamIndex].Descendants().First())
+                {
+                    case ILiteralOperation lit:
+                        if (lit.ConstantValue.HasValue)
+                        {
+                            Message = lit.ConstantValue.Value as string ?? string.Empty;
+                        }
+                        break;
 
-                case IFieldReferenceOperation fieldRef:
-                    if (fieldRef.ConstantValue.HasValue)
-                    {
-                        Message = fieldRef.ConstantValue.Value as string ?? string.Empty;
-                    }
-                    break;
+                    case IFieldReferenceOperation fieldRef:
+                        if (fieldRef.ConstantValue.HasValue)
+                        {
+                            Message = fieldRef.ConstantValue.Value as string ?? string.Empty;
+                        }
+                        break;
+                }
             }
 
             if (LogLevelParamIndex > 0)

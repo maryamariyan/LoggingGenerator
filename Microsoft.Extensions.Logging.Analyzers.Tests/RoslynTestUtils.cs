@@ -59,7 +59,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                         }
                     }
 
-                    Assert.True(ignore);
+                    Assert.True(ignore, d.ToString());
                 }
             }
         }

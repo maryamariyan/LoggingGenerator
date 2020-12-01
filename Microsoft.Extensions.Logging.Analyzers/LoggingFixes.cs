@@ -70,11 +70,8 @@ namespace Microsoft.Extensions.Logging.Analyzers
             }
 
             var method = invocationOp.TargetMethod;
-            if (method == null)
-            {
-                // shouldn't happen, we should only be called with a known target method
-                return (null, null);
-            }
+
+            // TODO: should check that this method is an actual logging method we are equipped to fix.
 
             var details = new FixDetails(method, invocationOp, invocationDoc.Project.DefaultNamespace, invocationDoc.Project.Documents);
 
@@ -161,13 +158,10 @@ namespace Microsoft.Extensions.Logging.Analyzers
                 var allClasses = allNodes.Where(d => d.IsKind(SyntaxKind.ClassDeclaration)).OfType<ClassDeclarationSyntax>();
                 foreach (var cl in allClasses)
                 {
-                    if (!string.IsNullOrEmpty(details.TargetNamespace))
+                    var nspace = GetNamespace(cl);
+                    if (nspace != details.TargetNamespace)
                     {
-                        var parent = cl.Parent as NamespaceDeclarationSyntax;
-                        if (parent == null || parent.Name.ToString() != details.TargetNamespace)
-                        {
-                            continue;
-                        }
+                        continue;
                     }
 
                     if (cl.Identifier.Text == details.TargetClassName)
@@ -206,6 +200,35 @@ namespace {details.TargetNamespace}
 
                 proj = proj.AddDocument(details.TargetFilename, text).Project;
             }
+        }
+
+        private static string GetNamespace(ClassDeclarationSyntax cl)
+        {
+            var ns = cl.Parent as NamespaceDeclarationSyntax;
+            if (ns == null)
+            {
+                if (cl.Parent is not CompilationUnitSyntax)
+                {
+                    // nested type, we don't do those
+                    return "<+Invalid Namespace+>";
+                }
+
+                return string.Empty;
+            }
+
+            var nspace = ns.Name.ToString();
+            for (; ; )
+            {
+                ns = ns.Parent as NamespaceDeclarationSyntax;
+                if (ns == null)
+                {
+                    break;
+                }
+
+                nspace = $"{ns.Name}.{nspace}";
+            }
+
+            return nspace;
         }
 
         /// <summary>
@@ -468,16 +491,16 @@ namespace {details.TargetNamespace}
                         {
                             var arg = ma.ArgumentList!.Arguments[0];
                             var eventId = (int)(sm.GetConstantValue(arg.Expression, cancellationToken).Value!);
-                            if (eventId > max)
+                            if (eventId >= max)
                             {
-                                max = eventId;
+                                max = eventId + 1;
                             }
                         }
                     }
                 }
             }
 
-            return max + 1;
+            return max;
         }
 
         private static async Task<Solution> RewriteLoggingCall(
@@ -495,8 +518,16 @@ namespace {details.TargetNamespace}
             var invocation = sm.GetOperation(invocationExpression, cancellationToken) as IInvocationOperation;
             var argList = new List<SyntaxNode>();
 
+            int index = 0;
             foreach (var arg in invocation!.Arguments)
             {
+                if ((index == details.MessageParamIndex) || (index == details.LogLevelParamIndex))
+                {
+                    index++;
+                    continue;
+                }
+                index++;
+
                 if (arg.ArgumentKind == ArgumentKind.ParamArray)
                 {
                     var arrayCreation = arg.Value as IArrayCreationOperation;
@@ -511,12 +542,10 @@ namespace {details.TargetNamespace}
                 }
             }
 
-            // remove the message argument
-            argList.RemoveAt(details.MessageParamIndex);
-
-            var call = gen.InvocationExpression(
-                gen.MemberAccessExpression(gen.TypeExpression(comp.GetTypeByMetadataName(details.FullTargetClassName)), methodName),
-                argList);
+            var typeSyntax = comp.GetTypeByMetadataName(details.FullTargetClassName);
+            var typeSymbol = gen.TypeExpression(typeSyntax);
+            var memberAccessExpression = gen.MemberAccessExpression(typeSymbol, methodName);
+            var call = gen.InvocationExpression(memberAccessExpression, argList);
 
             docEditor.ReplaceNode(invocationExpression, call.WithTriviaFrom(invocationExpression));
 

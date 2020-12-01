@@ -66,16 +66,12 @@ namespace Microsoft.Extensions.Logging.Analyzers
 
                     operationBlockContext.RegisterOperationAction(operationContext =>
                     {
-                        var invocation = (IInvocationOperation)operationContext.Operation;
-                        var method = invocation.TargetMethod;
-                        if (method == null)
-                        {
-                            return;
-                        }
+                        var invocationOp = (IInvocationOperation)operationContext.Operation;
+                        var method = invocationOp.TargetMethod;
 
-                        if (legacyMethods.Contains(invocation.TargetMethod.OriginalDefinition))
+                        if (legacyMethods.Contains(method.OriginalDefinition))
                         {
-                            var diagnostic = Diagnostic.Create(UsingLegacyLoggingMethod, invocation.Syntax.GetLocation());
+                            var diagnostic = Diagnostic.Create(UsingLegacyLoggingMethod, invocationOp.Syntax.GetLocation());
                             operationContext.ReportDiagnostic(diagnostic);
                         }
                     }, OperationKind.Invocation);
