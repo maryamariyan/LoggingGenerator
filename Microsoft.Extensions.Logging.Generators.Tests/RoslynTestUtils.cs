@@ -1,6 +1,6 @@
 // © Microsoft Corporation. All rights reserved.
 
-namespace Microsoft.Extensions.Logging.Analyzers.Tests
+namespace Microsoft.Extensions.Logging.Generators.Tests
 {
     using Microsoft.CodeAnalysis;
     using Microsoft.CodeAnalysis.CSharp;
