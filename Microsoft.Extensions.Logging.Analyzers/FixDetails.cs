@@ -38,30 +38,38 @@ namespace Microsoft.Extensions.Logging.Analyzers
 
             if (MessageParamIndex >= 0)
             {
-                switch (invocationOp.Arguments[MessageParamIndex].Descendants().First())
+                var op = invocationOp.Arguments[MessageParamIndex].Descendants().SingleOrDefault(x => x.Kind == OperationKind.Literal || x.Kind == OperationKind.FieldReference);
+                switch (op)
                 {
                     case ILiteralOperation lit:
-                        if (lit.ConstantValue.HasValue)
-                        {
-                            Message = lit.ConstantValue.Value as string ?? string.Empty;
-                        }
+                        Message = lit.ConstantValue.Value as string ?? string.Empty;
                         break;
 
                     case IFieldReferenceOperation fieldRef:
-                        if (fieldRef.ConstantValue.HasValue)
-                        {
-                            Message = fieldRef.ConstantValue.Value as string ?? string.Empty;
-                        }
+                        Message = fieldRef.ConstantValue.Value as string ?? string.Empty;
                         break;
                 }
             }
 
             if (LogLevelParamIndex > 0)
             {
-                var fieldRef = invocationOp.Arguments[LogLevelParamIndex].Descendants().First() as IFieldReferenceOperation;
-                if (fieldRef != null)
+                object? value = null;
+
+                var op = invocationOp.Arguments[LogLevelParamIndex].Descendants().SingleOrDefault(x => x.Kind == OperationKind.Literal || x.Kind == OperationKind.FieldReference);
+                switch (op)
                 {
-                    Level = ((int)(fieldRef.ConstantValue.Value!)) switch
+                    case ILiteralOperation lit:
+                        value = lit.ConstantValue.Value;
+                        break;
+
+                    case IFieldReferenceOperation fieldRef:
+                        value = fieldRef.ConstantValue.Value;
+                        break;
+                }
+
+                if (value is int)
+                {
+                    Level = (int)value switch
                     {
                         0 => "Trace",
                         1 => "Debug",
@@ -151,7 +159,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
         }
 
         /// <summary>
-        /// Given a logging template string, generate a reasonable logging method name
+        /// Given a logging message with template args, generate a reasonable logging method name
         /// </summary>
         private static string DeriveName(string message)
         {
@@ -159,7 +167,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
             bool capitalizeNext = true;
             foreach (var ch in message)
             {
-                if (char.IsLetter(ch) || (sb.Length > 1 && char.IsLetterOrDigit(ch)))
+                if (char.IsLetter(ch) || (char.IsLetterOrDigit(ch) && sb.Length > 1))
                 {
                     if (capitalizeNext)
                     {

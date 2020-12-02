@@ -43,7 +43,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                 class Container
                 {
                     private const string Message = ""Hello"";
-                    private const LogLevel Level = LogLevel.Debug; 
+                    private const LogLevel Level = LogLevel.Debug;
 
                     public void Test(ILogger logger)
                     {
@@ -85,6 +85,10 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                         /*29+*/logger.Log(LogLevel.Critical, new Exception(), ""Hello {arg1}"", ""One"");/*-29*/
 
                         /*30+*/logger.Log(Level, Message);/*-30*/
+
+                        /*31+*/logger.LogCritical(""Hello {arg1:0}"", ""One"");/*-31*/
+                        /*32+*/logger.LogCritical(""Hello {arg1:0"", ""One"");/*-32*/
+                        /*33+*/logger.LogCritical(""Hello {{arg1}}"");/*-33*/
                     }
                 }
                 ";
@@ -126,6 +130,10 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                 new DetailsData { Level = "Critical",    TargetMethodName = "HelloArg1", Message = "Hello {arg1}", MessageArgs = one,     MessageParamIndex = 3, ExceptionParamIndex = 2,  ArgsParamIndex = 4, LogLevelParamIndex = 1 },
 
                 new DetailsData { Level = "Debug",       TargetMethodName = "Hello",     Message = "Hello",        MessageArgs = nothing, MessageParamIndex = 2, ExceptionParamIndex = -1, ArgsParamIndex = 3, LogLevelParamIndex = 1 },
+
+                new DetailsData { Level = "Critical",    TargetMethodName = "HelloArg10", Message = "Hello {arg1:0}", MessageArgs = one,     MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Critical",    TargetMethodName = "HelloArg10", Message = "Hello {arg1:0",  MessageArgs = nothing, MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
+                new DetailsData { Level = "Critical",    TargetMethodName = "HelloArg1",  Message = "Hello {{arg1}}", MessageArgs = nothing, MessageParamIndex = 1, ExceptionParamIndex = -1, ArgsParamIndex = 2 },
             };
 
             var proj = RoslynTestUtils
@@ -174,6 +182,8 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
 
                 class Container
                 {
+                    private const string NullMessage = null!;
+
                     public void Test(ILogger logger)
                     {
                         /*0+*/logger.Log(LogLevel.Debug, new EventId(), ""Hello"");/*-0*/
@@ -182,6 +192,9 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                         /*3+*/logger.LogDebug(new EventId(), new Exception(), ""Hello"");/*-3*/
                         /*4+*/logger.LogTrace("""");/*-4*/
                         /*5+*/logger.Log((LogLevel)42, ""Hello"");/*-5*/
+                        /*6+*/logger.LogDebug(NullMessage);/*-6*/
+                        /*7+*/logger.LogDebug(null!);/*-7*/
+                        /*8+*/logger.Log((LogLevel)3.1415, ""Hello"");/*-8*/
                     }
                 }
                 ";
@@ -194,7 +207,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             await proj.CommitChanges().ConfigureAwait(false);
             var invocationDoc = proj.FindDocument("invocation.cs");
 
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 9; i++)
             {
                 var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
                 Assert.Null(invocationExpression);

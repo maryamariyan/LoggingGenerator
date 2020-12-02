@@ -152,9 +152,8 @@ namespace Microsoft.Extensions.Logging.Analyzers
         {
             for (; ; )
             {
-                var sm = (await proj.Documents.First().GetSemanticModelAsync(cancellationToken).ConfigureAwait(false))!;
-
-                var allNodes = sm.Compilation.SyntaxTrees.SelectMany(s => s.GetRoot().DescendantNodes());
+                var comp = (await proj.GetCompilationAsync(cancellationToken).ConfigureAwait(false))!;
+                var allNodes = comp.SyntaxTrees.SelectMany(s => s.GetRoot().DescendantNodes());
                 var allClasses = allNodes.Where(d => d.IsKind(SyntaxKind.ClassDeclaration)).OfType<ClassDeclarationSyntax>();
                 foreach (var cl in allClasses)
                 {
