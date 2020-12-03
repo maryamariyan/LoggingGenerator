@@ -6,6 +6,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
     using Microsoft.CodeAnalysis.CSharp.Syntax;
     using Microsoft.CodeAnalysis.Text;
     using System;
+    using System.ComponentModel.Design;
     using System.Threading;
     using System.Threading.Tasks;
     using Xunit;
@@ -369,6 +370,49 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
         }
 
         [Fact]
+        public async void InDeepNamespace()
+        {
+            var invocationSourceCode = @"
+                using Microsoft.Extensions.Logging;
+
+                class Container
+                {
+                    public void Test(ILogger logger)
+                    {
+                        /*0+*/logger.LogDebug(""Hello"");/*-0*/
+                    }
+                }
+                ";
+
+            var proj = RoslynTestUtils
+                .CreateTestProject()
+                    .WithLoggingBoilerplate()
+                    .WithDocument("invocation.cs", invocationSourceCode)
+                    .WithDefaultNamespace("Namespace1.Namespace2");
+
+            await proj.CommitChanges().ConfigureAwait(false);
+            var invocationDoc = proj.FindDocument("invocation.cs");
+
+            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            Assert.Equal("Log.cs", details!.TargetFilename);
+            Assert.Equal("Namespace1.Namespace2", details.TargetNamespace);
+            Assert.Equal("Namespace1.Namespace2.Log", details.FullTargetClassName);
+
+            var sol = await LoggingFixes.ApplyFix(invocationDoc, invocationExpression!, details, CancellationToken.None).ConfigureAwait(false);
+
+            var proj2 = sol.GetProject(proj.Id)!;
+            var invocationDoc2 = proj2.FindDocument("invocation.cs");
+            var targetDoc = proj2.FindDocument("Log.cs");
+
+            Assert.NotNull(invocationDoc2);
+            Assert.NotNull(targetDoc);
+
+            await proj2.AssertNoDiagnostic("CS8795").ConfigureAwait(false);
+
+            proj.Dispose();
+        }
+
+        [Fact]
         public async void GetFinalTargetMethodNameTest()
         {
             var targetSourceCode = @"
@@ -376,16 +420,19 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
 
                 namespace Example
                 {
-                    /*0+*/static partial class Log/*-0*/
+                    namespace Example2
                     {
-                        [LoggerMessage(0, LogLevel.Debug, ""TestB"")]
-                        static partial void TestB(ILogger logger);
+                        /*0+*/static partial class Log/*-0*/
+                        {
+                            [LoggerMessage(0, LogLevel.Debug, ""TestB"")]
+                            static partial void TestB(ILogger logger);
 
-                        [LoggerMessage(1, LogLevel.Debug, ""TestCX"")]
-                        static partial void TestC(ILogger logger);
+                            [LoggerMessage(1, LogLevel.Debug, ""TestCX"")]
+                            static partial void TestC(ILogger logger);
 
-                        [LoggerMessage(2, LogLevel.Debug, ""TestD {arg1}"")]
-                        static partial void TestDArg1(ILogger logger, int arg1);
+                            [LoggerMessage(2, LogLevel.Debug, ""TestD {arg1}"")]
+                            static partial void TestDArg1(ILogger logger, int arg1);
+                        }
                     }
                 }
                 ";
@@ -462,12 +509,30 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             var targetSourceCode = @"
                 using Microsoft.Extensions.Logging;
 
-                namespace Example
+                namespace Example.Example2
                 {
                     static partial class Log
                     {
-                        [LoggerMessage(41, LogLevel.Debug, ""TestA"")]
+                        [LoggerMessage(41, LogLevel.Trace, ""TestA"")]
                         static partial void TestA(ILogger logger);
+
+                        [LoggerMessage(42, LogLevel.Debug, ""TestB"")]
+                        static partial void TestB(ILogger logger);
+
+                        [LoggerMessage(43, LogLevel.Information, ""TestC"")]
+                        static partial void TestC(ILogger logger);
+
+                        [LoggerMessage(44, LogLevel.Warning, ""TestD"")]
+                        static partial void TestD(ILogger logger);
+
+                        [LoggerMessage(45, LogLevel.Error, ""TestE"")]
+                        static partial void TestE(ILogger logger);
+
+                        [LoggerMessage(46, LogLevel.Critical, ""TestF"")]
+                        static partial void TestF(ILogger logger);
+
+                        [LoggerMessage(47, (LogLevel)42, ""TestG"")]
+                        static partial void TestG(ILogger logger);
                     }
                 }
                 ";
@@ -481,7 +546,13 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                     {
                         public static void TestMethod(ILogger logger)
                         {
-                            /*0+*/logger.LogDebug(""TestB"");/*-0*/
+                            /*0+*/logger.LogTrace(""TestAX"");/*-0*/
+                            /*1+*/logger.LogDebug(""TestBX"");/*-1*/
+                            /*2+*/logger.LogInformation(""TestCX"");/*-2*/
+                            /*3+*/logger.LogWarning(""TestDX"");/*-3*/
+                            /*4+*/logger.LogError(""TestEX"");/*-4*/
+                            /*5+*/logger.LogCritical(""TestFX"");/*-5*/
+                            /*6+*/logger.Log((LogLevel)42, ""TestGX"");/*-6*/
                         }
                     }
                 }
@@ -501,7 +572,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
             var sol = await LoggingFixes.ApplyFix(invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
 
-            // TODO: check that the generated method has an event id of 42
+            // TODO: check that the generated methods have appropriate event idsn event id of 42
 
             proj.Dispose();
         }
@@ -557,39 +628,67 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                             /*33+*/logger.Log(LogLevel.Error, new Exception(), ""TestE"");/*-33*/
                             /*34+*/logger.Log(LogLevel.Critical, ""TestF"");/*-34*/
                             /*35+*/logger.Log(LogLevel.Critical, new Exception(), ""TestF"");/*-35*/
+
+                            /*36+*/logger.LogDebug(""TestB {foo}"", ""foo"");/*-36*/
                         }
                     }
                 }
                 ";
 
-            var proj = RoslynTestUtils
-                .CreateTestProject()
-                    .WithLoggingBoilerplate()
-                    .WithDocument("invocation.cs", invocationSourceCode);
+            var existingClass = @"
+                namespace Example
+                {
+                    namespace Example2
+                    {
+                        internal partial class Log
+                        {
+                        }
+                    }
+                }
+                ";
 
-            await proj.CommitChanges().ConfigureAwait(false);
-
-            var invocationDoc = proj.FindDocument("invocation.cs");
-            for (int i = 0; i < 36; i++)
+            for (int scenario = 0; scenario < 3; scenario++)
             {
-                _output.WriteLine($"Iteration {i}");
+                var proj = RoslynTestUtils
+                    .CreateTestProject()
+                        .WithLoggingBoilerplate()
+                        .WithDocument("invocation.cs", invocationSourceCode);
 
-                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
-                Assert.NotNull(invocationExpression);
-                Assert.NotNull(details);
+                if (scenario == 1)
+                {
+                    proj = proj
+                        .WithDefaultNamespace("Example.Example2")
+                        .WithDocument("Log.cs", existingClass);
+                }
+                else if (scenario == 1)
+                {
+                        proj = proj.WithDefaultNamespace("Example.Example2");
+                }
 
-                var sol = await LoggingFixes.ApplyFix(invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+                await proj.CommitChanges().ConfigureAwait(false);
 
-                var proj2 = sol.GetProject(proj.Id)!;
-                var invocationDoc2 = proj2.FindDocument("invocation.cs");
-                var targetDoc = proj2.FindDocument("Log.cs");
+                var invocationDoc = proj.FindDocument("invocation.cs");
+                for (int i = 0; i < 37; i++)
+                {
+                    _output.WriteLine($"Iteration {i}");
 
-                Assert.NotNull(invocationDoc2);
-                Assert.NotNull(targetDoc);
+                    var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
+                    Assert.NotNull(invocationExpression);
+                    Assert.NotNull(details);
 
-                // TODO: need to validate the generated code!
+                    var sol = await LoggingFixes.ApplyFix(invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
 
-                await proj2.AssertNoDiagnostic("CS8795").ConfigureAwait(false);
+                    var proj2 = sol.GetProject(proj.Id)!;
+                    var invocationDoc2 = proj2.FindDocument("invocation.cs");
+                    var targetDoc = proj2.FindDocument("Log.cs");
+
+                    Assert.NotNull(invocationDoc2);
+                    Assert.NotNull(targetDoc);
+
+                    // TODO: need to validate the generated code!
+
+                    await proj2.AssertNoDiagnostic("CS8795").ConfigureAwait(false);
+                }
             }
         }
     }
