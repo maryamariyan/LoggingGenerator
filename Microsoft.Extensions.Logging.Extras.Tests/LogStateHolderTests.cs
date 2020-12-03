@@ -14,10 +14,10 @@ namespace Microsoft.Extensions.Logging.Tests
         {
             var kvp = Array.Empty<KeyValuePair<string, object?>>();
 
-            var s = new LogStateHolder();
+            Func<LogStateHolder, Exception?, string> f = (_, _) => "TestData";
+            var s = new LogStateHolder(f);
             TestCollection(kvp, s);
-            Assert.Equal(string.Empty, LogStateHolder.Format(new LogStateHolder(), null));
-            Assert.Equal(string.Empty, s.ToString());
+            Assert.Equal("TestData", s.ToString());
         }
 
         [Fact]

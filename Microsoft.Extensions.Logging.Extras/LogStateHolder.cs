@@ -13,6 +13,13 @@ namespace Microsoft.Extensions.Logging
     /// </summary>
     public readonly struct LogStateHolder : IReadOnlyList<KeyValuePair<string, object?>>
     {
+        private readonly Func<LogStateHolder, Exception?, string> _formatFunc;
+
+        public LogStateHolder(Func<LogStateHolder, Exception?, string> formatFunc)
+        {
+            _formatFunc = formatFunc;
+        }
+
         public int Count => 0;
 
         public KeyValuePair<string, object?> this[int index]
@@ -28,9 +35,8 @@ namespace Microsoft.Extensions.Logging
             yield break;
         }
 
-        public override string ToString() => string.Empty;
+        public override string ToString() => _formatFunc(this, null);
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-        public static readonly Func<LogStateHolder, Exception?, string> Format = (s, _) => string.Empty;
     }
 
     public readonly struct LogStateHolder<T> : IReadOnlyList<KeyValuePair<string, object?>>
