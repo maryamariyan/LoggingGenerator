@@ -1,17 +1,17 @@
 ﻿// © Microsoft Corporation. All rights reserved.
 
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
+
 [assembly: System.Resources.NeutralResourcesLanguage("en-us")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Microsoft.Extensions.Logging.Analyzers.Tests")]
 
 namespace Microsoft.Extensions.Logging.Analyzers
 {
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.Diagnostics;
-    using Microsoft.CodeAnalysis.Operations;
-    using System;
-    using System.Collections.Generic;
-    using System.Collections.Immutable;
-
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class LoggingAnalyzer : DiagnosticAnalyzer
     {

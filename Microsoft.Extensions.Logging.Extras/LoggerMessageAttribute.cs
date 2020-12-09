@@ -1,10 +1,10 @@
 ﻿// © Microsoft Corporation. All rights reserved.
 
+using System;
+using Microsoft.Extensions.Logging;
+
 namespace Microsoft.Extensions.Logging
 {
-    using System;
-    using Microsoft.Extensions.Logging;
-
     /// <summary>
     /// Provides information to guide the production of a strongly-typed logging method.
     /// </summary>

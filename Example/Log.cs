@@ -1,9 +1,9 @@
 ﻿// © Microsoft Corporation. All rights reserved.
 
+using Microsoft.Extensions.Logging;
+
 namespace Example
 {
-    using Microsoft.Extensions.Logging;
-
     // bogus warning, need to fix the analyzer
 #pragma warning disable CA1801 // Review unused parameters
 

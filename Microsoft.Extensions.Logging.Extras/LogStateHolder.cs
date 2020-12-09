@@ -1,11 +1,11 @@
 ﻿// © Microsoft Corporation. All rights reserved.
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
+
 namespace Microsoft.Extensions.Logging
 {
-    using System;
-    using System.Collections;
-    using System.Collections.Generic;
-
 #pragma warning disable CA1815 // Override equals and operator equals on value types
 
     /// <summary>

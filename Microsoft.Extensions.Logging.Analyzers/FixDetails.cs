@@ -1,15 +1,14 @@
 ﻿// © Microsoft Corporation. All rights reserved.
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Operations;
+
 namespace Microsoft.Extensions.Logging.Analyzers
 {
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.Operations;
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
-
-
     /// <summary>
     /// Tracks a bunch of metadata about a potential fix to apply
     /// </summary>

@@ -1,11 +1,11 @@
 ﻿// © Microsoft Corporation. All rights reserved.
 
+using System;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
+
 namespace Example
 {
-    using Microsoft.Extensions.Logging;
-    using System;
-    using System.Text.Json;
-
     class Program
     {
 #if false

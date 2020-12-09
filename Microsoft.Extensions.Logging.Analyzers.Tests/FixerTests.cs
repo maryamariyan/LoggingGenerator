@@ -1,17 +1,15 @@
 // © Microsoft Corporation. All rights reserved.
 
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
+using Xunit;
+using Xunit.Abstractions;
+
 namespace Microsoft.Extensions.Logging.Analyzers.Tests
 {
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Microsoft.CodeAnalysis.Text;
-    using System;
-    using System.ComponentModel.Design;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Xunit;
-    using Xunit.Abstractions;
-
     public class FixerTests
     {
         class DetailsData

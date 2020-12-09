@@ -1,11 +1,11 @@
 // © Microsoft Corporation. All rights reserved.
 
+using System;
+using Microsoft.Extensions.Logging;
+using Xunit;
+
 namespace Microsoft.Extensions.Logging.Tests
 {
-    using Microsoft.Extensions.Logging;
-    using System;
-    using Xunit;
-
     public class LoggerMessageAttributeTests
     {
         [Fact]
