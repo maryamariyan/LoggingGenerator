@@ -1,6 +1,6 @@
 ﻿# LoggingGenerator
 
-This is an example showing how we can arrange to have strongly typed logging APIs.
+This is an example showing how we can arrange to have strongly typed logging APIs for modern .NET apps.
 
 The point of this exercise is to create a logging model which:
 
@@ -14,7 +14,7 @@ Use is pretty simple. A service developer creates a class which lists all of the
 Once this is done, new methods are generated automatically which the developer uses to interact with an ILogger instance. 
 
 The Microsoft.Extensions.Logging.Generators project uses C# 9.0 source generators. This is magic voodoo invoked at compile time. This code is
-responsible for finding types annotated with the [LoggerExtensions] attribute and automatically generating the strongly-typed
+responsible for finding methods annotated with the [LoggerMessage] attribute and automatically generating the strongly-typed
 logging methods.
 
 ## Current State
@@ -51,16 +51,14 @@ General
 
 Generator
 
-* Add more unit tests
 * The Microsoft.Extensions.Logging.Extras assembly is only temporary. The types in here should go to the Microsoft.Extensions.Logging.Abstractions assembly
 
 Analyzer
 
-* Add unit tests
+* Nothing to do.
 
 Fixer
 
-* Add more unit tests
 * BUG: If the target class is in the same file as the legacy call site, then things get confused
 
 ## Example
