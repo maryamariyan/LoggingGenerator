@@ -44,8 +44,10 @@ namespace Microsoft.Extensions.Logging.Analyzers
             context.RegisterCompilationStartAction(compilationStartContext =>
             {
                 var loggerExtensions = compilationStartContext.Compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
+#pragma warning disable RS1024 // Compare symbols correctly
                 var legacyMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
-                
+#pragma warning restore RS1024 // Compare symbols correctly
+
                 if (loggerExtensions != null)
                 {
                     legacyMethods.UnionWith(loggerExtensions.GetMembers("LogTrace").OfType<IMethodSymbol>());
