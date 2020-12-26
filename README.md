@@ -32,7 +32,7 @@ for any uses of the legacy LoggerExtensions.Log<Debug|Information|Warning|Error|
 methods.
 
 For most of these uses, fixer logic is available that makes it trivial for a user to highlight
-call to a legacy log method and have a shiny new strongly-type logging method signature 
+a call to a legacy log method and have a shiny new strongly-typed logging method signature 
 generated automatically. This makes it a snap to convert existing log uses to the new more
 efficient form.
 
@@ -66,7 +66,7 @@ Fixer
 Here is an example interface written by a developer, followed by the code being auto-generated.
 
 ```csharp
-partial class Log
+static partial class Log
 {
     [LoggerMessage(0, LogLevel.Critical, "Could not open socket to `{hostName}`")]
     public static partial void CouldNotOpenSocket(ILogger logger, string hostName);
@@ -77,7 +77,7 @@ And the resulting generated code:
 
 
 ```csharp
-partial class Log
+ststic partial class Log
 {
     private static readonly global::System.Func<global::Microsoft.Extensions.Logging.LogStateHolder<string>, global::System.Exception?, string> __CouldNotOpenSocketFormatFunc = (__holder, _) =>
     {

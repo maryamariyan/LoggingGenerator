@@ -4,13 +4,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Example
 {
-    // bogus warning, need to fix the analyzer
-#pragma warning disable CA1801 // Review unused parameters
-
+    // This shows how a developer can declare their logging messages, which will be turned into
+    // full-fledged logging methods by the code generation logic.
+    //
+    // Any method annotated with [LoggerMessage] triggers the code generator. This means it is
+    // possible to have utility methods or other completely unrelated content in classes
+    // that have logger messages, if a developer choses to.
     static partial class Log
     {
         [LoggerMessage(0, LogLevel.Critical, "Could not open socket to `{hostName}`")]
-        internal static partial void CouldNotOpenSocket(ILogger logger, string hostName);
+        public static partial void CouldNotOpenSocket(ILogger logger, string hostName);
 
         [LoggerMessage(1, LogLevel.Debug, @"Connection id '{connectionId}' started.")]
         public static partial void ConnectionStart(ILogger logger, string connectionId);
