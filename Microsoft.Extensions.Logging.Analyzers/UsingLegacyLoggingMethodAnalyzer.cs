@@ -13,30 +13,15 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Microsoft.Extensions.Logging.Analyzers
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class LoggingAnalyzer : DiagnosticAnalyzer
+    public class UsingLegacyLoggingMethodAnalyzer : DiagnosticAnalyzer
     {
-        internal const string DiagnosticId = "LA0000";
-        private const string DiagnosticCategory = "Performance";
-
 #pragma warning disable RS2008 // Enable analyzer release tracking
 
-        private static readonly DiagnosticDescriptor UsingLegacyLoggingMethod = new(
-            id: DiagnosticId,
-            title: Resources.UsingLegacyMethodTitle,
-            messageFormat: Resources.UsingLegacyMethodMessage,
-            category: DiagnosticCategory,
-            description: Resources.UsingLegacyMethodDescription,
-            defaultSeverity: DiagnosticSeverity.Warning,
-            isEnabledByDefault: true);
-
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(UsingLegacyLoggingMethod);
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(DiagDescriptors.UsingLegacyLoggingMethod);
 
         public override void Initialize(AnalysisContext context)
         {
-            if (context == null)
-            {
-                throw new ArgumentNullException(nameof(context));
-            }
+            _ = context ?? throw new ArgumentNullException(nameof(context));
 
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
@@ -73,7 +58,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
 
                         if (legacyMethods.Contains(method.OriginalDefinition))
                         {
-                            var diagnostic = Diagnostic.Create(UsingLegacyLoggingMethod, invocationOp.Syntax.GetLocation());
+                            var diagnostic = Diagnostic.Create(DiagDescriptors.UsingLegacyLoggingMethod, invocationOp.Syntax.GetLocation());
                             operationContext.ReportDiagnostic(diagnostic);
                         }
                     }, OperationKind.Invocation);

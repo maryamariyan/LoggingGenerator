@@ -38,7 +38,7 @@ namespace Microsoft.Extensions.Logging
         /// <summary>
         /// Gets or sets the logging event id for the logging method.
         /// </summary>
-        public int EventId { get; set; }
+        public int EventId { get; }
 
         /// <summary>
         /// Gets or sets the logging event name for the logging method.
@@ -51,11 +51,11 @@ namespace Microsoft.Extensions.Logging
         /// <summary>
         /// Gets or sets the logging level for the logging method.
         /// </summary>
-        public LogLevel Level { get; set; }
+        public LogLevel Level { get; }
 
         /// <summary>
         /// Gets or sets the message text for the logging method.
         /// </summary>
-        public string Message { get; set; }
+        public string Message { get; }
     }
 }

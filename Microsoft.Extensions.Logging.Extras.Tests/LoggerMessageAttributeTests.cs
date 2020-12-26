@@ -17,14 +17,7 @@ namespace Microsoft.Extensions.Logging.Tests
             Assert.Equal("Foo", a.Message);
             Assert.Equal((string ?)null, a.EventName);
 
-            a.EventId = 3_1415;
-            a.Level = LogLevel.Debug;
-            a.Message = "Bar";
             a.EventName = "Name";
-
-            Assert.Equal(3_1415, a.EventId);
-            Assert.Equal(LogLevel.Debug, a.Level);
-            Assert.Equal("Bar", a.Message);
             Assert.Equal("Name", a.EventName);
         }
     }

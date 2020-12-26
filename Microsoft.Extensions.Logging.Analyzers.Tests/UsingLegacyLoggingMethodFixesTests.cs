@@ -10,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace Microsoft.Extensions.Logging.Analyzers.Tests
 {
-    public class FixerTests
+    public class UsingLegacyLoggingMethodFixesTests
     {
         class DetailsData
         {
@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
 
         private readonly ITestOutputHelper _output;
 
-        public FixerTests(ITestOutputHelper output)
+        public UsingLegacyLoggingMethodFixesTests(ITestOutputHelper output)
         {
             _output = output;
         }
@@ -148,7 +148,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             {
                 _output.WriteLine($"Iteration {i}");
 
-                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
+                var (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
                 Assert.NotNull(invocationExpression);
                 Assert.NotNull(details);
 
@@ -208,7 +208,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
 
             for (int i = 0; i < 9; i++)
             {
-                var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
+                var (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
                 Assert.Null(invocationExpression);
                 Assert.Null(details);
             }
@@ -230,7 +230,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             await proj.CommitChanges().ConfigureAwait(false);
             var invocationDoc = proj.FindDocument("invocation.cs");
 
-            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, new TextSpan(0, 10), CancellationToken.None).ConfigureAwait(false);
+            var (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, new TextSpan(0, 10), CancellationToken.None).ConfigureAwait(false);
             Assert.Null(invocationExpression);
             Assert.Null(details);
 
@@ -257,7 +257,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             await proj.CommitChanges().ConfigureAwait(false);
             invocationDoc = proj.FindDocument("invocation.cs");
 
-            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
             Assert.Null(invocationExpression);
             Assert.Null(details);
 
@@ -285,7 +285,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             await proj.CommitChanges().ConfigureAwait(false);
             invocationDoc = proj.FindDocument("invocation.cs");
 
-            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
             Assert.Null(invocationExpression);
             Assert.Null(details);
 
@@ -315,7 +315,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             await proj.CommitChanges().ConfigureAwait(false);
             var invocationDoc = proj.FindDocument("log.cs");
 
-            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            var (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
             Assert.Equal("Log2.cs", details!.TargetFilename);
             Assert.Equal("", details.TargetNamespace);
             Assert.Equal("Log", details.TargetClassName);
@@ -348,12 +348,12 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             await proj.CommitChanges().ConfigureAwait(false);
             var invocationDoc = proj.FindDocument("invocation.cs");
 
-            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            var (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
             Assert.Equal("Log.cs", details!.TargetFilename);
             Assert.Equal("Namespace", details.TargetNamespace);
             Assert.Equal("Namespace.Log", details.FullTargetClassName);
 
-            var sol = await LoggingFixes.ApplyFix(invocationDoc, invocationExpression!, details, CancellationToken.None).ConfigureAwait(false);
+            var sol = await UsingLegacyLoggingMethodFixes.ApplyFix(invocationDoc, invocationExpression!, details, CancellationToken.None).ConfigureAwait(false);
 
             var proj2 = sol.GetProject(proj.Id)!;
             var invocationDoc2 = proj2.FindDocument("invocation.cs");
@@ -391,12 +391,12 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             await proj.CommitChanges().ConfigureAwait(false);
             var invocationDoc = proj.FindDocument("invocation.cs");
 
-            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            var (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
             Assert.Equal("Log.cs", details!.TargetFilename);
             Assert.Equal("Namespace1.Namespace2", details.TargetNamespace);
             Assert.Equal("Namespace1.Namespace2.Log", details.FullTargetClassName);
 
-            var sol = await LoggingFixes.ApplyFix(invocationDoc, invocationExpression!, details, CancellationToken.None).ConfigureAwait(false);
+            var sol = await UsingLegacyLoggingMethodFixes.ApplyFix(invocationDoc, invocationExpression!, details, CancellationToken.None).ConfigureAwait(false);
 
             var proj2 = sol.GetProject(proj.Id)!;
             var invocationDoc2 = proj2.FindDocument("invocation.cs");
@@ -468,33 +468,33 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             var targetRoot = await targetDoc.GetSyntaxRootAsync(CancellationToken.None).ConfigureAwait(false);
             var targetClass = targetRoot!.FindNode(RoslynTestUtils.MakeSpan(targetSourceCode, 0)) as ClassDeclarationSyntax;
 
-            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
-            var (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            var (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            var (methodName, existing) = await UsingLegacyLoggingMethodFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
             Assert.Equal("TestA", methodName);
             Assert.False(existing);
 
-            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 1), CancellationToken.None).ConfigureAwait(false);
-            (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 1), CancellationToken.None).ConfigureAwait(false);
+            (methodName, existing) = await UsingLegacyLoggingMethodFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
             Assert.Equal("TestB", methodName);
             Assert.True(existing);
 
-            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 2), CancellationToken.None).ConfigureAwait(false);
-            (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 2), CancellationToken.None).ConfigureAwait(false);
+            (methodName, existing) = await UsingLegacyLoggingMethodFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
             Assert.Equal("TestB2", methodName);
             Assert.False(existing);
 
-            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 3), CancellationToken.None).ConfigureAwait(false);
-            (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 3), CancellationToken.None).ConfigureAwait(false);
+            (methodName, existing) = await UsingLegacyLoggingMethodFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
             Assert.Equal("TestB", methodName);
             Assert.False(existing);
 
-            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 4), CancellationToken.None).ConfigureAwait(false);
-            (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 4), CancellationToken.None).ConfigureAwait(false);
+            (methodName, existing) = await UsingLegacyLoggingMethodFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
             Assert.Equal("TestC2", methodName);
             Assert.False(existing);
 
-            (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 5), CancellationToken.None).ConfigureAwait(false);
-            (methodName, existing) = await LoggingFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 5), CancellationToken.None).ConfigureAwait(false);
+            (methodName, existing) = await UsingLegacyLoggingMethodFixes.GetFinalTargetMethodName(targetDoc, targetClass!, invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
             Assert.Equal("TestDArg1", methodName);
             Assert.False(existing);
 
@@ -567,8 +567,8 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
             var targetDoc = proj.FindDocument("target.cs");
             var invocationDoc = proj.FindDocument("invocation.cs");
 
-            var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
-            var sol = await LoggingFixes.ApplyFix(invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+            var (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, 0), CancellationToken.None).ConfigureAwait(false);
+            var sol = await UsingLegacyLoggingMethodFixes.ApplyFix(invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
 
             // TODO: check that the generated methods have appropriate event idsn event id of 42
 
@@ -670,11 +670,11 @@ namespace Microsoft.Extensions.Logging.Analyzers.Tests
                 {
                     _output.WriteLine($"Iteration {i}");
 
-                    var (invocationExpression, details) = await LoggingFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
+                    var (invocationExpression, details) = await UsingLegacyLoggingMethodFixes.CheckIfCanFix(invocationDoc, RoslynTestUtils.MakeSpan(invocationSourceCode, i), CancellationToken.None).ConfigureAwait(false);
                     Assert.NotNull(invocationExpression);
                     Assert.NotNull(details);
 
-                    var sol = await LoggingFixes.ApplyFix(invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
+                    var sol = await UsingLegacyLoggingMethodFixes.ApplyFix(invocationDoc, invocationExpression!, details!, CancellationToken.None).ConfigureAwait(false);
 
                     var proj2 = sol.GetProject(proj.Id)!;
                     var invocationDoc2 = proj2.FindDocument("invocation.cs");

@@ -17,10 +17,10 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Microsoft.Extensions.Logging.Analyzers
 {
-    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(LoggingFixes)), Shared]
-    public class LoggingFixes : CodeFixProvider
+    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(UsingLegacyLoggingMethodFixes)), Shared]
+    public partial class UsingLegacyLoggingMethodFixes : CodeFixProvider
     {
-        public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(LoggingAnalyzer.DiagnosticId);
+        public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(DiagDescriptors.UsingLegacyLoggingMethod.Id);
         public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)

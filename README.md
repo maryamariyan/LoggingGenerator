@@ -51,7 +51,8 @@ General
 
 Generator
 
-* The Microsoft.Extensions.Logging.Extras assembly is only temporary. The types in here should go to the Microsoft.Extensions.Logging.Abstractions assembly
+* The Microsoft.Extensions.Logging.Extras assembly is only temporary. The types in here should go to the
+Microsoft.Extensions.Logging.Abstractions assembly
 
 Analyzer
 

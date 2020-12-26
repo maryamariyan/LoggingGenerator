@@ -4,6 +4,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Example
 {
+// Bug in this analyzer, it's getting confused
+#pragma warning disable CA1801 // Review unused parameters
+
     // This shows how a developer can declare their logging messages, which will be turned into
     // full-fledged logging methods by the code generation logic.
     //
