@@ -2,10 +2,10 @@
 
 using System;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Internal;
 using Xunit;
 
-namespace Microsoft.Extensions.Logging.Tests
+namespace Microsoft.Extensions.Logging.Test
 {
     public class LogStateHolderTests
     {
@@ -23,7 +23,7 @@ namespace Microsoft.Extensions.Logging.Tests
         [Fact]
         public void OneType()
         {
-            var kvp = new KeyValuePair<string, object?>[]
+            var kvp = new[]
             {
                 new KeyValuePair<string, object?>("name1", 1),
             };
@@ -38,7 +38,7 @@ namespace Microsoft.Extensions.Logging.Tests
         [Fact]
         public void TwoTypes()
         {
-            var kvp = new KeyValuePair<string, object?>[]
+            var kvp = new[]
             {
                 new KeyValuePair<string, object?>("name1", 1),
                 new KeyValuePair<string, object?>("name2", 2),
@@ -55,7 +55,7 @@ namespace Microsoft.Extensions.Logging.Tests
         [Fact]
         public void ThreeTypes()
         {
-            var kvp = new KeyValuePair<string, object?>[]
+            var kvp = new[]
             {
                 new KeyValuePair<string, object?>("name1", 1),
                 new KeyValuePair<string, object?>("name2", 2),
@@ -74,7 +74,7 @@ namespace Microsoft.Extensions.Logging.Tests
         [Fact]
         public void FourTypes()
         {
-            var kvp = new KeyValuePair<string, object?>[]
+            var kvp = new[]
             {
                 new KeyValuePair<string, object?>("name1", 1),
                 new KeyValuePair<string, object?>("name2", 2),
@@ -95,7 +95,7 @@ namespace Microsoft.Extensions.Logging.Tests
         [Fact]
         public void FiveTypes()
         {
-            var kvp = new KeyValuePair<string, object?>[]
+            var kvp = new[]
             {
                 new KeyValuePair<string, object?>("name1", 1),
                 new KeyValuePair<string, object?>("name2", 2),
@@ -118,7 +118,7 @@ namespace Microsoft.Extensions.Logging.Tests
         [Fact]
         public void SixTypes()
         {
-            var kvp = new KeyValuePair<string, object?>[]
+            var kvp = new[]
             {
                 new KeyValuePair<string, object?>("name1", 1),
                 new KeyValuePair<string, object?>("name2", 2),
@@ -143,7 +143,7 @@ namespace Microsoft.Extensions.Logging.Tests
         [Fact]
         public void NTypes()
         {
-            var kvp = new KeyValuePair<string, object?>[]
+            var kvp = new[]
             {
                 new KeyValuePair<string, object?>("name1", 1),
                 new KeyValuePair<string, object?>("name2", 2),

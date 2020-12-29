@@ -1,7 +1,6 @@
 ﻿// © Microsoft Corporation. All rights reserved.
 
 using System;
-using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Extensions.Logging
 {
@@ -12,7 +11,8 @@ namespace Microsoft.Extensions.Logging
     public sealed class LoggerMessageAttribute : Attribute
     {
         /// <summary>
-        /// Creates an attribute to guide the production of a strongly-typed logging method.
+        /// Initializes a new instance of the <see cref="LoggerMessageAttribute"/> class
+        /// which is used to guide the production of a strongly-typed logging method.
         /// </summary>
         /// <param name="eventId">The stable event id for this log message.</param>
         /// <param name="level">THe logging level produced when invoking the strongly-typed logging method.</param>
@@ -33,10 +33,13 @@ namespace Microsoft.Extensions.Logging
         ///     void CouldNotOpenSocket(string hostName);
         /// }
         /// </example>
-        public LoggerMessageAttribute(int eventId, LogLevel level, string message) => (EventId, Level, Message) = (eventId, level, message);
+        public LoggerMessageAttribute(int eventId, LogLevel level, string message)
+        {
+            (EventId, Level, Message) = (eventId, level, message);
+        }
 
         /// <summary>
-        /// Gets or sets the logging event id for the logging method.
+        /// Gets the logging event id for the logging method.
         /// </summary>
         public int EventId { get; }
 
@@ -49,12 +52,12 @@ namespace Microsoft.Extensions.Logging
         public string? EventName { get; set; }
 
         /// <summary>
-        /// Gets or sets the logging level for the logging method.
+        /// Gets the logging level for the logging method.
         /// </summary>
         public LogLevel Level { get; }
 
         /// <summary>
-        /// Gets or sets the message text for the logging method.
+        /// Gets the message text for the logging method.
         /// </summary>
         public string Message { get; }
     }

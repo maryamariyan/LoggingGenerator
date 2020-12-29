@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Extensions.Loggin
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Extensions.Logging.Extras", "Microsoft.Extensions.Logging.Extras\Microsoft.Extensions.Logging.Extras.csproj", "{6786B034-F2AE-4ADC-BF42-779ECAC4D392}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Extensions.Logging.Generators.Tests", "Microsoft.Extensions.Logging.Generators.Tests\Microsoft.Extensions.Logging.Generators.Tests.csproj", "{90B80669-147A-4FC0-8E6E-75B3ADC5EDFA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Extensions.Logging.Generators.Test", "Microsoft.Extensions.Logging.Generators.Tests\Microsoft.Extensions.Logging.Generators.Test.csproj", "{90B80669-147A-4FC0-8E6E-75B3ADC5EDFA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6B178725-ED29-4FEA-A7BB-5B9712BA4656}"
 	ProjectSection(SolutionItems) = preProject
@@ -20,11 +20,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Extensions.Logging.Extras.Tests", "Microsoft.Extensions.Logging.Extras.Tests\Microsoft.Extensions.Logging.Extras.Tests.csproj", "{DEC1D920-6129-4877-BD07-783AB423A243}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Extensions.Logging.Extras.Test", "Microsoft.Extensions.Logging.Extras.Tests\Microsoft.Extensions.Logging.Extras.Test.csproj", "{DEC1D920-6129-4877-BD07-783AB423A243}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Extensions.Logging.Analyzers", "Microsoft.Extensions.Logging.Analyzers\Microsoft.Extensions.Logging.Analyzers.csproj", "{93897859-AB7A-498C-814E-1A92E339A045}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Extensions.Logging.Analyzers.Tests", "Microsoft.Extensions.Logging.Analyzers.Tests\Microsoft.Extensions.Logging.Analyzers.Tests.csproj", "{B3C395BF-8832-48AA-9C71-661707EB8293}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Extensions.Logging.Analyzers.Test", "Microsoft.Extensions.Logging.Analyzers.Tests\Microsoft.Extensions.Logging.Analyzers.Test.csproj", "{B3C395BF-8832-48AA-9C71-661707EB8293}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

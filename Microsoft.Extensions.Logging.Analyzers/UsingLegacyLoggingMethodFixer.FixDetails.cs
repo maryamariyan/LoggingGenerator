@@ -6,28 +6,29 @@ using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Operations;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Extensions.Logging.Analyzers
 {
-    partial class UsingLegacyLoggingMethodFixes
+    public partial class UsingLegacyLoggingMethodFixer
     {
         /// <summary>
         /// Tracks a bunch of metadata about a potential fix to apply
         /// </summary>
         internal class FixDetails
         {
-            public readonly int MessageParamIndex;
-            public readonly int ExceptionParamIndex;
-            public readonly int EventIdParamIndex;
-            public readonly int LogLevelParamIndex;
-            public readonly int ArgsParamIndex;
-            public readonly string Message = string.Empty;
-            public readonly string Level = string.Empty;
-            public readonly string TargetFilename;
-            public readonly string TargetNamespace;
-            public readonly string TargetClassName;
-            public readonly string TargetMethodName;
-            public readonly IReadOnlyList<string> MessageArgs;
+            public int MessageParamIndex { get; }
+            public int ExceptionParamIndex { get; }
+            public int EventIdParamIndex { get; }
+            public int LogLevelParamIndex { get; }
+            public int ArgsParamIndex { get; }
+            public string Message { get; } = string.Empty;
+            public string Level { get; } = string.Empty;
+            public string TargetFilename { get; }
+            public string TargetNamespace { get; }
+            public string TargetClassName { get; }
+            public string TargetMethodName { get; }
+            public IReadOnlyList<string> MessageArgs { get; }
 
             public FixDetails(
                 IMethodSymbol method,
@@ -70,22 +71,13 @@ namespace Microsoft.Extensions.Logging.Analyzers
 
                     if (value is int)
                     {
-                        Level = (int)value switch
-                        {
-                            0 => "Trace",
-                            1 => "Debug",
-                            2 => "Information",
-                            3 => "Warning",
-                            4 => "Error",
-                            5 => "Critical",
-                            _ => string.Empty,
-                        };
+                        Level = GetLogLevelName((LogLevel)value);
                     }
                 }
                 else
                 {
-                    Level = method.Name.Substring(3);
-                };
+                    Level = method.Name.Substring("Log".Length);
+                }
 
                 TargetFilename = FindUniqueFilename(docs);
                 TargetNamespace = defaultNamespace ?? string.Empty;
@@ -107,6 +99,20 @@ namespace Microsoft.Extensions.Logging.Analyzers
                 }
             }
 
+            public static string GetLogLevelName(LogLevel value)
+            {
+                return value switch
+                {
+                    LogLevel.Trace => "Trace",
+                    LogLevel.Debug => "Debug",
+                    LogLevel.Information => "Information",
+                    LogLevel.Warning => "Warning",
+                    LogLevel.Error => "Error",
+                    LogLevel.Critical => "Critical",
+                    _ => string.Empty,
+                };
+            }
+
             private static string FindUniqueFilename(IEnumerable<Document> docs)
             {
                 var targetName = "Log.cs";
@@ -125,13 +131,14 @@ namespace Microsoft.Extensions.Logging.Analyzers
                             break;
                         }
                     }
-                } while (duplicate);
+                }
+                while (duplicate);
 
                 return targetName;
             }
 
             /// <summary>
-            /// Finds the position of the well-known parameters of legacy logging methods. 
+            /// Finds the position of the well-known parameters of legacy logging methods.
             /// </summary>
             /// <returns>-1 for any parameter not present in the given overload</returns>
             private static (int message, int exception, int eventId, int logLevel, int args) IdentifyParameters(IMethodSymbol method)
@@ -153,6 +160,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
                         case "logLevel": logLevel = index; break;
                         case "args": args = index; break;
                     }
+
                     index++;
                 }
 
@@ -172,12 +180,12 @@ namespace Microsoft.Extensions.Logging.Analyzers
                     {
                         if (capitalizeNext)
                         {
-                            sb.Append(char.ToUpperInvariant(ch));
+                            _ = sb.Append(char.ToUpperInvariant(ch));
                             capitalizeNext = false;
                         }
                         else
                         {
-                            sb.Append(ch);
+                            _ = sb.Append(ch);
                         }
                     }
                     else
@@ -189,7 +197,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
                 return sb.ToString();
             }
 
-            static readonly char[] _formatDelimiters = { ',', ':' };
+            private static readonly char[] _formatDelimiters = { ',', ':' };
 
             /// <summary>
             /// Finds the template arguments contained in the message string
@@ -233,7 +241,9 @@ namespace Microsoft.Extensions.Logging.Analyzers
                 {
                     if (braceOccurrenceCount > 0 && message[scanIndex] != brace)
                     {
+#pragma warning disable S109 // Magic numbers should not be used
                         if (braceOccurrenceCount % 2 == 0)
+#pragma warning restore S109 // Magic numbers should not be used
                         {
                             // Even number of '{' or '}' found. Proceed search with next occurrence of '{' or '}'.
                             braceOccurrenceCount = 0;

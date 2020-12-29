@@ -3,12 +3,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
 
 [assembly: System.Resources.NeutralResourcesLanguage("en-us")]
-[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Microsoft.Extensions.Logging.Analyzers.Tests")]
+[assembly: InternalsVisibleTo("Microsoft.Extensions.Logging.Analyzers.Test")]
 
 namespace Microsoft.Extensions.Logging.Analyzers
 {
