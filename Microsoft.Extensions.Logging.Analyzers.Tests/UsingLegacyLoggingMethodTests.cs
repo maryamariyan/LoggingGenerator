@@ -1,12 +1,16 @@
-// © Microsoft Corporation. All rights reserved.
+// Â© Microsoft Corporation. All rights reserved.
 
 using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.Extensions.Logging;
 using Xunit;
+
+#pragma warning disable SA1009 // Closing parenthesis should be spaced correctly
 
 namespace Microsoft.Extensions.Logging.Analyzers.Test
 {
@@ -15,13 +19,13 @@ namespace Microsoft.Extensions.Logging.Analyzers.Test
         [Fact]
         public async Task Basic()
         {
-            var originalTarget = @"
+            const string originalTarget = @"
                 static partial class Log
                 {
                 }
                 ";
 
-            var originalSource = @"
+            const string originalSource = @"
                 using Microsoft.Extensions.Logging;
                 using System;
 
@@ -92,7 +96,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Test
                 }
                 ";
 
-            var expectedSource = @"
+            const string expectedSource = @"
                 using Microsoft.Extensions.Logging;
                 using System;
 
@@ -170,8 +174,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Test
                     }
                 }
                 ";
-
-            var expectedTarget = @"
+            const string expectedTarget = @"
                 static partial class Log
                 {
 
@@ -338,22 +341,24 @@ namespace Microsoft.Extensions.Logging.Analyzers.Test
     internal static partial void HelloArg1(Microsoft.Extensions.Logging.ILogger logger);
 }
                 ";
- 
-            var (actualSource, actualTarget) = await FixerRunner.ApplyAllFixes(
-                new UsingLegacyLoggingMethodAnalyzer(), new UsingLegacyLoggingMethodFixer(),
-                originalSource, originalTarget).ConfigureAwait(false);
 
-            Assert.Equal(expectedSource.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualSource);
-            Assert.Equal(expectedTarget.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualTarget);
+            var l = await RoslynTestUtils.RunAnalyzerAndFixer(
+                new UsingLegacyLoggingMethodAnalyzer(),
+                new UsingLegacyLoggingMethodFixer(),
+                new[] { Assembly.GetAssembly(typeof(ILogger))!, Assembly.GetAssembly(typeof(LoggerMessageAttribute))! },
+                new[] { originalSource, originalTarget }).ConfigureAwait(false);
+
+            var actualSource = l[0];
+            var actualTarget = l[1];
+
+            Assert.Equal(expectedSource.Replace("\r\n", "\n", StringComparison.Ordinal), actualSource);
+            Assert.Equal(expectedTarget.Replace("\r\n", "\n", StringComparison.Ordinal), actualTarget);
         }
 
         [Fact]
         public async Task TargetClassDoesntExist()
         {
-            var originalTarget = @"
-                ";
-
-            var originalSource = @"
+            const string originalSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -368,7 +373,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Test
                 }
                 ";
 
-            var expectedSource = @"
+            const string expectedSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -383,7 +388,7 @@ namespace Microsoft.Extensions.Logging.Analyzers.Test
                 }
                 ";
 
-            var expectedTarget = @"
+            const string expectedTarget = @"
 #pragma warning disable CS8019
 using Microsoft.Extensions.Logging;
 using System;
@@ -400,18 +405,24 @@ static partial class Log
 }
 ";
 
-            var (actualSource, actualTarget) = await FixerRunner.ApplyAllFixes(
-                new UsingLegacyLoggingMethodAnalyzer(), new UsingLegacyLoggingMethodFixer(),
-                originalSource, originalTarget, "Log.cs").ConfigureAwait(false);
+            var l = await RoslynTestUtils.RunAnalyzerAndFixer(
+                new UsingLegacyLoggingMethodAnalyzer(),
+                new UsingLegacyLoggingMethodFixer(),
+                new[] { Assembly.GetAssembly(typeof(ILogger))!, Assembly.GetAssembly(typeof(LoggerMessageAttribute))! },
+                new[] { originalSource },
+                extraFile: "Log.cs").ConfigureAwait(false);
 
-            Assert.Equal(expectedSource.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualSource);
-            Assert.Equal(expectedTarget.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualTarget);
+            var actualSource = l[0];
+            var actualTarget = l[1];
+
+            Assert.Equal(expectedSource.Replace("\r\n", "\n", StringComparison.Ordinal), actualSource);
+            Assert.Equal(expectedTarget.Replace("\r\n", "\n", StringComparison.Ordinal), actualTarget);
         }
 
         [Fact]
         public async Task TargetClassInNamespace()
         {
-            var originalTarget = @"
+            const string originalTarget = @"
                 namespace Example
                 {
                     public static partial class Log
@@ -420,7 +431,7 @@ static partial class Log
                 }
                 ";
 
-            var originalSource = @"
+            const string originalSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -435,7 +446,7 @@ static partial class Log
                 }
                 ";
 
-            var expectedSource = @"
+            const string expectedSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -449,7 +460,7 @@ static partial class Log
                     }
                 }
                 ";
-            var expectedTarget = @"
+            const string expectedTarget = @"
                 namespace Example
                 {
                     public static partial class Log
@@ -464,21 +475,24 @@ static partial class Log
                 }
                 ";
 
-            var (actualSource, actualTarget) = await FixerRunner.ApplyAllFixes(
-                new UsingLegacyLoggingMethodAnalyzer(), new UsingLegacyLoggingMethodFixer(),
-                originalSource, originalTarget, null, "Example").ConfigureAwait(false);
+            var l = await RoslynTestUtils.RunAnalyzerAndFixer(
+                new UsingLegacyLoggingMethodAnalyzer(),
+                new UsingLegacyLoggingMethodFixer(),
+                new[] { Assembly.GetAssembly(typeof(ILogger))!, Assembly.GetAssembly(typeof(LoggerMessageAttribute))! },
+                new[] { originalSource, originalTarget },
+                defaultNamespace: "Example").ConfigureAwait(false);
 
-            Assert.Equal(expectedSource.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualSource);
-            Assert.Equal(expectedTarget.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualTarget);
+            var actualSource = l[0];
+            var actualTarget = l[1];
+
+            Assert.Equal(expectedSource.Replace("\r\n", "\n", StringComparison.Ordinal), actualSource);
+            Assert.Equal(expectedTarget.Replace("\r\n", "\n", StringComparison.Ordinal), actualTarget);
         }
 
         [Fact]
         public async Task TargetClassDoesntExistWithNamespace()
         {
-            var originalTarget = @"
-                ";
-
-            var originalSource = @"
+            const string originalSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -493,7 +507,7 @@ static partial class Log
                 }
                 ";
 
-            var expectedSource = @"
+            const string expectedSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -507,7 +521,7 @@ static partial class Log
                     }
                 }
                 ";
-            var expectedTarget = @"
+            const string expectedTarget = @"
 namespace Example
 {
 #pragma warning disable CS8019
@@ -527,18 +541,25 @@ namespace Example
 }
 ";
 
-            var (actualSource, actualTarget) = await FixerRunner.ApplyAllFixes(
-                new UsingLegacyLoggingMethodAnalyzer(), new UsingLegacyLoggingMethodFixer(),
-                originalSource, originalTarget, "Log.cs", "Example").ConfigureAwait(false);
+            var l = await RoslynTestUtils.RunAnalyzerAndFixer(
+                new UsingLegacyLoggingMethodAnalyzer(),
+                new UsingLegacyLoggingMethodFixer(),
+                new[] { Assembly.GetAssembly(typeof(ILogger))!, Assembly.GetAssembly(typeof(LoggerMessageAttribute))! },
+                new[] { originalSource },
+                extraFile: "Log.cs",
+                defaultNamespace: "Example").ConfigureAwait(false);
 
-            Assert.Equal(expectedSource.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualSource);
-            Assert.Equal(expectedTarget.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualTarget);
+            var actualSource = l[0];
+            var actualTarget = l[1];
+
+            Assert.Equal(expectedSource.Replace("\r\n", "\n", StringComparison.Ordinal), actualSource);
+            Assert.Equal(expectedTarget.Replace("\r\n", "\n", StringComparison.Ordinal), actualTarget);
         }
 
         [Fact]
         public async Task TargetClassExistWithDeepNamespace()
         {
-            var originalTarget = @"
+            const string originalTarget = @"
                 namespace Example
                 {
                     namespace Example2
@@ -550,7 +571,7 @@ namespace Example
                 }
                 ";
 
-            var originalSource = @"
+            const string originalSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -565,7 +586,7 @@ namespace Example
                 }
                 ";
 
-            var expectedSource = @"
+            const string expectedSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -580,7 +601,7 @@ namespace Example
                 }
                 ";
 
-            var expectedTarget = @"
+            const string expectedTarget = @"
                 namespace Example
                 {
                     namespace Example2
@@ -598,18 +619,24 @@ namespace Example
                 }
                 ";
 
-            var (actualSource, actualTarget) = await FixerRunner.ApplyAllFixes(
-                new UsingLegacyLoggingMethodAnalyzer(), new UsingLegacyLoggingMethodFixer(),
-                originalSource, originalTarget, null, "Example.Example2").ConfigureAwait(false);
+            var l = await RoslynTestUtils.RunAnalyzerAndFixer(
+                new UsingLegacyLoggingMethodAnalyzer(),
+                new UsingLegacyLoggingMethodFixer(),
+                new[] { Assembly.GetAssembly(typeof(ILogger))!, Assembly.GetAssembly(typeof(LoggerMessageAttribute))! },
+                new[] { originalSource, originalTarget },
+                defaultNamespace: "Example.Example2").ConfigureAwait(false);
 
-            Assert.Equal(expectedSource.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualSource);
-            Assert.Equal(expectedTarget.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualTarget);
+            var actualSource = l[0];
+            var actualTarget = l[1];
+
+            Assert.Equal(expectedSource.Replace("\r\n", "\n", StringComparison.Ordinal), actualSource);
+            Assert.Equal(expectedTarget.Replace("\r\n", "\n", StringComparison.Ordinal), actualTarget);
         }
 
         [Fact]
         public async Task TargetClassDoesntExistInNestedType()
         {
-            var originalTarget = @"
+            const string originalTarget = @"
                 namespace Example
                 {
                     class Container
@@ -621,7 +648,7 @@ namespace Example
                 }
                 ";
 
-            var originalSource = @"
+            const string originalSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -636,7 +663,7 @@ namespace Example
                 }
                 ";
 
-            var expectedSource = @"
+            const string expectedSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -651,7 +678,7 @@ namespace Example
                 }
                 ";
 
-            var expectedTarget = @"
+            const string expectedTarget = @"
 namespace Example.Example2
 {
 #pragma warning disable CS8019
@@ -671,24 +698,31 @@ namespace Example.Example2
 }
 ";
 
-            var (actualSource, actualTarget) = await FixerRunner.ApplyAllFixes(
-                new UsingLegacyLoggingMethodAnalyzer(), new UsingLegacyLoggingMethodFixer(),
-                originalSource, originalTarget, "Log.cs", "Example.Example2").ConfigureAwait(false);
+            var l = await RoslynTestUtils.RunAnalyzerAndFixer(
+                new UsingLegacyLoggingMethodAnalyzer(),
+                new UsingLegacyLoggingMethodFixer(),
+                new[] { Assembly.GetAssembly(typeof(ILogger))!, Assembly.GetAssembly(typeof(LoggerMessageAttribute))! },
+                new[] { originalSource, originalTarget },
+                extraFile: "Log.cs",
+                defaultNamespace: "Example.Example2").ConfigureAwait(false);
 
-            Assert.Equal(expectedSource.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualSource);
-            Assert.Equal(expectedTarget.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualTarget);
+            var actualSource = l[0];
+            var actualTarget = l[2];
+
+            Assert.Equal(expectedSource.Replace("\r\n", "\n", StringComparison.Ordinal), actualSource);
+            Assert.Equal(expectedTarget.Replace("\r\n", "\n", StringComparison.Ordinal), actualTarget);
         }
 
         [Fact]
         public async Task DuplicateFilename()
         {
-            var originalTarget = @"
+            const string originalTarget = @"
                 namespace Example
                 {
                 }
                 ";
 
-            var originalSource = @"
+            const string originalSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -703,7 +737,7 @@ namespace Example.Example2
                 }
                 ";
 
-            var expectedSource = @"
+            const string expectedSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -718,7 +752,7 @@ namespace Example.Example2
                 }
                 ";
 
-            var expectedTarget = @"
+            const string expectedTarget = @"
 namespace Example
 {
 #pragma warning disable CS8019
@@ -738,18 +772,26 @@ namespace Example
 }
 ";
 
-            var (actualSource, actualTarget) = await FixerRunner.ApplyAllFixes(
-                new UsingLegacyLoggingMethodAnalyzer(), new UsingLegacyLoggingMethodFixer(),
-                originalSource, originalTarget, "Log2.cs", "Example", "Log.cs").ConfigureAwait(false);
+            var l = await RoslynTestUtils.RunAnalyzerAndFixer(
+                new UsingLegacyLoggingMethodAnalyzer(),
+                new UsingLegacyLoggingMethodFixer(),
+                new[] { Assembly.GetAssembly(typeof(ILogger))!, Assembly.GetAssembly(typeof(LoggerMessageAttribute))! },
+                new[] { originalSource, originalTarget },
+                sourceNames: new[] { "primary.cs", "Log.cs" },
+                extraFile: "Log2.cs",
+                defaultNamespace: "Example").ConfigureAwait(false);
 
-            Assert.Equal(expectedSource.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualSource);
-            Assert.Equal(expectedTarget.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualTarget);
+            var actualSource = l[0];
+            var actualTarget = l[2];
+
+            Assert.Equal(expectedSource.Replace("\r\n", "\n", StringComparison.Ordinal), actualSource);
+            Assert.Equal(expectedTarget.Replace("\r\n", "\n", StringComparison.Ordinal), actualTarget);
         }
 
         [Fact]
         public async Task MissingMetadata()
         {
-            var originalTarget = @"
+            const string originalTarget = @"
                 namespace Example
                 {
                     public static partial class Log
@@ -758,7 +800,7 @@ namespace Example
                 }
                 ";
 
-            var originalSource = @"
+            const string originalSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -773,7 +815,7 @@ namespace Example
                 }
                 ";
 
-            var expectedSource = @"
+            const string expectedSource = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -788,7 +830,7 @@ namespace Example
                 }
                 ";
 
-            var expectedTarget = @"
+            const string expectedTarget = @"
                 namespace Example
                 {
                     public static partial class Log
@@ -803,15 +845,21 @@ namespace Example
                 }
                 ";
 
-            var (actualSource, actualTarget) = await FixerRunner.ApplyAllFixes(
-                new UsingLegacyLoggingMethodAnalyzer(), new UsingLegacyLoggingMethodFixer
+            var l = await RoslynTestUtils.RunAnalyzerAndFixer(
+                new UsingLegacyLoggingMethodAnalyzer(),
+                new UsingLegacyLoggingMethodFixer
                 {
-                    _getTypeByMetadataName3 = (c, n) => null,
+                    _getTypeByMetadataName3 = (_, _) => null,
                 },
-                originalSource, originalTarget, null, "Example").ConfigureAwait(false);
+                new[] { Assembly.GetAssembly(typeof(ILogger))!, Assembly.GetAssembly(typeof(LoggerMessageAttribute))! },
+                new[] { originalSource, originalTarget },
+                defaultNamespace: "Example").ConfigureAwait(false);
 
-            Assert.Equal(expectedSource.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualSource);
-            Assert.Equal(expectedTarget.Replace("\r\n", "\n", System.StringComparison.InvariantCulture), actualTarget);
+            var actualSource = l[0];
+            var actualTarget = l[1];
+
+            Assert.Equal(expectedSource.Replace("\r\n", "\n", StringComparison.Ordinal), actualSource);
+            Assert.Equal(expectedTarget.Replace("\r\n", "\n", StringComparison.Ordinal), actualTarget);
         }
 
         [Fact]
@@ -825,7 +873,7 @@ namespace Example
         [Fact]
         public async Task FailureModes()
         {
-            var targetSourceCode = @"
+            const string targetSourceCode = @"
                 using Microsoft.Extensions.Logging;
                 using System;
                 using System.Runtime.CompilerServices;
@@ -846,7 +894,8 @@ namespace Example
                     }
                 }
                 ";
-            var invocationSourceCode = @"
+
+            const string invocationSourceCode = @"
                 using Microsoft.Extensions.Logging;
 
                 namespace Example
@@ -862,8 +911,7 @@ namespace Example
                 ";
 
             var proj = RoslynTestUtils
-                .CreateTestProject()
-                    .WithLoggingBoilerplate()
+                .CreateTestProject(new[] { Assembly.GetAssembly(typeof(ILogger))!, Assembly.GetAssembly(typeof(LoggerMessageAttribute))! })
                     .WithDocument("target.cs", targetSourceCode)
                     .WithDocument("invocation.cs", invocationSourceCode);
 
@@ -896,10 +944,7 @@ namespace Example
 
             f = new UsingLegacyLoggingMethodFixer
             {
-                _getSyntaxRootAsync = (d, t) =>
-                {
-                    return Task.FromResult<SyntaxNode?>(null);
-                }
+                _getSyntaxRootAsync = (_, _) => Task.FromResult<SyntaxNode?>(null)
             };
 
             (invocationExpression, details) = await f.CheckIfCanFixAsync(
@@ -912,10 +957,7 @@ namespace Example
 
             f = new UsingLegacyLoggingMethodFixer
             {
-                _getSemanticModelAsync = (d, t) =>
-                {
-                    return Task.FromResult<SemanticModel?>(null);
-                }
+                _getSemanticModelAsync = (_, _) => Task.FromResult<SemanticModel?>(null)
             };
 
             (invocationExpression, details) = await f.CheckIfCanFixAsync(
@@ -928,10 +970,7 @@ namespace Example
 
             f = new UsingLegacyLoggingMethodFixer
             {
-                _getOperation = (sm, sn, t) =>
-                {
-                    return null;
-                }
+                _getOperation = (_, _, _) => null
             };
 
             (invocationExpression, details) = await f.CheckIfCanFixAsync(
@@ -944,10 +983,7 @@ namespace Example
 
             f = new UsingLegacyLoggingMethodFixer
             {
-                _getDeclaredSymbol = (sm, md, t) =>
-                {
-                    return null;
-                }
+                _getDeclaredSymbol = (_, _, _) => null
             };
 
             (invocationExpression, details) = await f.CheckIfCanFixAsync(
@@ -971,10 +1007,7 @@ namespace Example
 
             f = new UsingLegacyLoggingMethodFixer
             {
-                _getTypeByMetadataName1 = (c, t) =>
-                {
-                    return null;
-                }
+                _getTypeByMetadataName1 = (_, _) => null
             };
 
             (invocationExpression, details) = await f.CheckIfCanFixAsync(
@@ -987,10 +1020,7 @@ namespace Example
 
             f = new UsingLegacyLoggingMethodFixer
             {
-                _getTypeByMetadataName2 = (c, t) =>
-                {
-                    return null;
-                }
+                _getTypeByMetadataName2 = (_, _) => null
             };
 
             (invocationExpression, details) = await f.CheckIfCanFixAsync(

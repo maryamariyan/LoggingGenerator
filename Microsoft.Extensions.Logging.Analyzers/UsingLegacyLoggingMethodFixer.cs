@@ -64,7 +64,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
         internal async Task<(InvocationExpressionSyntax?, FixDetails?)> CheckIfCanFixAsync(Document invocationDoc, TextSpan span, CancellationToken cancellationToken)
         {
             var root = await _getSyntaxRootAsync(invocationDoc, cancellationToken).ConfigureAwait(false);
-            if (root == null || root.FindNode(span) is not InvocationExpressionSyntax invocationExpression)
+            if (root?.FindNode(span) is not InvocationExpressionSyntax invocationExpression)
             {
                 // shouldn't happen, we only get called for invocations
                 return (null, null);
@@ -119,43 +119,6 @@ namespace Microsoft.Extensions.Logging.Analyzers
         }
 
         /// <summary>
-        /// Orchestrate all the work needed to fix an issue.
-        /// </summary>
-        internal async Task<Solution> ApplyFixAsync(Document invocationDoc, InvocationExpressionSyntax invocationExpression, FixDetails details, CancellationToken cancellationToken)
-        {
-            ClassDeclarationSyntax targetClass;
-            Document targetDoc;
-            Solution sol;
-
-            // stable id surviving across solution generations
-            var invocationDocId = invocationDoc.Id;
-
-            // get a reference to the class where to insert the logging method, creating it if necessary
-            (sol, targetClass, targetDoc) = await GetOrMakeTargetClassAsync(invocationDoc.Project, details, cancellationToken).ConfigureAwait(false);
-
-            // find the doc and invocation in the current solution
-            (invocationDoc, invocationExpression) = await RemapAsync(sol, invocationDocId, invocationExpression).ConfigureAwait(false);
-
-            // determine the final name of the logging method and whether we need to generate it or not
-            var (methodName, existing) = await GetFinalTargetMethodNameAsync(targetDoc, targetClass, invocationDoc, invocationExpression, details, cancellationToken).ConfigureAwait(false);
-
-            // if the target method doesn't already exist, go make it
-            if (!existing)
-            {
-                // generate the logging method signature in the target class
-                sol = await InsertLoggingMethodSignatureAsync(targetDoc, targetClass, invocationDoc, invocationExpression, details, cancellationToken).ConfigureAwait(false);
-
-                // find the doc and invocation in the current solution
-                (invocationDoc, invocationExpression) = await RemapAsync(sol, invocationDocId, invocationExpression).ConfigureAwait(false);
-            }
-
-            // rewrite the call site to invoke the generated logging method
-            sol = await RewriteLoggingCallAsync(invocationDoc, invocationExpression, details, methodName, cancellationToken).ConfigureAwait(false);
-
-            return sol;
-        }
-
-        /// <summary>
         /// Get the final name of the target method. If there's an existing method with the right
         /// message, level, and argument types, we just use that. Otherwise, we create a new method.
         /// </summary>
@@ -185,7 +148,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
 
             var conflict = false;
             var count = 2;
-            var methodName = string.Empty;
+            string methodName;
             do
             {
                 methodName = details.TargetMethodName;
@@ -318,7 +281,7 @@ namespace {details.TargetNamespace}
         }
 
         /// <summary>
-        /// Remaps an invocation expression to a new doc
+        /// Remaps an invocation expression to a new doc.
         /// </summary>
         private static async Task<(Document, InvocationExpressionSyntax)> RemapAsync(Solution sol, DocumentId docId, InvocationExpressionSyntax invocationExpression)
         {
@@ -358,7 +321,7 @@ namespace {details.TargetNamespace}
         }
 
         /// <summary>
-        /// Given a LoggerExtensions method invocation, produce a parameter list for the corresponding generated logging method
+        /// Given a LoggerExtensions method invocation, produce a parameter list for the corresponding generated logging method.
         /// </summary>
         private static IReadOnlyList<SyntaxNode> MakeParameterList(
             FixDetails details,
@@ -404,7 +367,7 @@ namespace {details.TargetNamespace}
         }
 
         /// <summary>
-        /// Given a LoggerExtensions method invocation, produce an argument list in the shape of a corresponding generated logging method
+        /// Given a LoggerExtensions method invocation, produce an argument list in the shape of a corresponding generated logging method.
         /// </summary>
         private static IReadOnlyList<ITypeSymbol> MakeArgumentList(FixDetails details, IInvocationOperation invocationOp)
         {
@@ -422,13 +385,11 @@ namespace {details.TargetNamespace}
             if (paramsArg != null)
             {
                 var arrayCreation = paramsArg.Value as IArrayCreationOperation;
-                var index = 0;
                 foreach (var e in arrayCreation!.Initializer.ElementValues)
                 {
                     foreach (var d in e.Descendants())
                     {
                         args.Add(d.Type);
-                        index++;
                     }
                 }
             }
@@ -492,6 +453,43 @@ namespace {details.TargetNamespace}
                 .Replace("\n", "\\n")
                 .Replace("\r", "\\r")
                 .Replace("\"", "\\\"");
+        }
+
+        /// <summary>
+        /// Orchestrate all the work needed to fix an issue.
+        /// </summary>
+        private async Task<Solution> ApplyFixAsync(Document invocationDoc, InvocationExpressionSyntax invocationExpression, FixDetails details, CancellationToken cancellationToken)
+        {
+            ClassDeclarationSyntax targetClass;
+            Document targetDoc;
+            Solution sol;
+
+            // stable id surviving across solution generations
+            var invocationDocId = invocationDoc.Id;
+
+            // get a reference to the class where to insert the logging method, creating it if necessary
+            (sol, targetClass, targetDoc) = await GetOrMakeTargetClassAsync(invocationDoc.Project, details, cancellationToken).ConfigureAwait(false);
+
+            // find the doc and invocation in the current solution
+            (invocationDoc, invocationExpression) = await RemapAsync(sol, invocationDocId, invocationExpression).ConfigureAwait(false);
+
+            // determine the final name of the logging method and whether we need to generate it or not
+            var (methodName, existing) = await GetFinalTargetMethodNameAsync(targetDoc, targetClass, invocationDoc, invocationExpression, details, cancellationToken).ConfigureAwait(false);
+
+            // if the target method doesn't already exist, go make it
+            if (!existing)
+            {
+                // generate the logging method signature in the target class
+                sol = await InsertLoggingMethodSignatureAsync(targetDoc, targetClass, invocationDoc, invocationExpression, details, cancellationToken).ConfigureAwait(false);
+
+                // find the doc and invocation in the current solution
+                (invocationDoc, invocationExpression) = await RemapAsync(sol, invocationDocId, invocationExpression).ConfigureAwait(false);
+            }
+
+            // rewrite the call site to invoke the generated logging method
+            sol = await RewriteLoggingCallAsync(invocationDoc, invocationExpression, details, methodName, cancellationToken).ConfigureAwait(false);
+
+            return sol;
         }
 
         private async Task<Solution> InsertLoggingMethodSignatureAsync(

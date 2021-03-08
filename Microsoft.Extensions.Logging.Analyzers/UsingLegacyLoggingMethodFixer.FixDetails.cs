@@ -13,7 +13,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
     public partial class UsingLegacyLoggingMethodFixer
     {
         /// <summary>
-        /// Tracks a bunch of metadata about a potential fix to apply
+        /// Tracks a bunch of metadata about a potential fix to apply.
         /// </summary>
         internal class FixDetails
         {
@@ -140,7 +140,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
             /// <summary>
             /// Finds the position of the well-known parameters of legacy logging methods.
             /// </summary>
-            /// <returns>-1 for any parameter not present in the given overload</returns>
+            /// <returns>-1 for any parameter not present in the given overload.</returns>
             private static (int message, int exception, int eventId, int logLevel, int args) IdentifyParameters(IMethodSymbol method)
             {
                 var message = -1;
@@ -168,7 +168,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
             }
 
             /// <summary>
-            /// Given a logging message with template args, generate a reasonable logging method name
+            /// Given a logging message with template args, generate a reasonable logging method name.
             /// </summary>
             private static string DeriveName(string message)
             {
@@ -200,7 +200,7 @@ namespace Microsoft.Extensions.Logging.Analyzers
             private static readonly char[] _formatDelimiters = { ',', ':' };
 
             /// <summary>
-            /// Finds the template arguments contained in the message string
+            /// Finds the template arguments contained in the message string.
             /// </summary>
             private static List<string> ExtractTemplateArgs(string message)
             {
