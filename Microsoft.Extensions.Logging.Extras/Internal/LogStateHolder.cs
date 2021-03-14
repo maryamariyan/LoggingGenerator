@@ -3,16 +3,24 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace Microsoft.Extensions.Logging.Internal
 {
-// legit use of magic number for indices
+    // legit use of magic number for indices
 #pragma warning disable S109 // Magic numbers should not be used
+
+    // This file contains internal types exposed for use by generated code
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable SA1600 // Elements should be documented
+#pragma warning disable SA1618 // Generic type parameters should be documented
+#pragma warning disable SA1402 // File may only contain a single type
 
     /// <summary>
     /// Implementation detail of the logging source generator.
     /// </summary>
-    public readonly struct LogStateHolder : IReadOnlyList<KeyValuePair<string, object?>>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public sealed class LogStateHolder : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogStateHolder, Exception?, string> _formatFunc;
 
@@ -35,7 +43,8 @@ namespace Microsoft.Extensions.Logging.Internal
     /// <summary>
     /// Implementation detail of the logging source generator.
     /// </summary>
-    public readonly struct LogStateHolder<T> : IReadOnlyList<KeyValuePair<string, object?>>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public sealed class LogStateHolder<T> : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogStateHolder<T>, Exception?, string> _formatFunc;
         private readonly string _name;
@@ -67,7 +76,8 @@ namespace Microsoft.Extensions.Logging.Internal
     /// <summary>
     /// Implementation detail of the logging source generator.
     /// </summary>
-    public readonly struct LogStateHolder<T1, T2> : IReadOnlyList<KeyValuePair<string, object?>>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public sealed class LogStateHolder<T1, T2> : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogStateHolder<T1, T2>, Exception?, string> _formatFunc;
         private readonly string[] _names;
@@ -105,7 +115,8 @@ namespace Microsoft.Extensions.Logging.Internal
     /// <summary>
     /// Implementation detail of the logging source generator.
     /// </summary>
-    public readonly struct LogStateHolder<T1, T2, T3> : IReadOnlyList<KeyValuePair<string, object?>>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public sealed class LogStateHolder<T1, T2, T3> : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogStateHolder<T1, T2, T3>, Exception?, string> _formatFunc;
         private readonly string[] _names;
@@ -146,7 +157,8 @@ namespace Microsoft.Extensions.Logging.Internal
     /// <summary>
     /// Implementation detail of the logging source generator.
     /// </summary>
-    public readonly struct LogStateHolder<T1, T2, T3, T4> : IReadOnlyList<KeyValuePair<string, object?>>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public sealed class LogStateHolder<T1, T2, T3, T4> : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogStateHolder<T1, T2, T3, T4>, Exception?, string> _formatFunc;
         private readonly string[] _names;
@@ -190,7 +202,8 @@ namespace Microsoft.Extensions.Logging.Internal
     /// <summary>
     /// Implementation detail of the logging source generator.
     /// </summary>
-    public readonly struct LogStateHolder<T1, T2, T3, T4, T5> : IReadOnlyList<KeyValuePair<string, object?>>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public sealed class LogStateHolder<T1, T2, T3, T4, T5> : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogStateHolder<T1, T2, T3, T4, T5>, Exception?, string> _formatFunc;
         private readonly string[] _names;
@@ -237,7 +250,8 @@ namespace Microsoft.Extensions.Logging.Internal
     /// <summary>
     /// Implementation detail of the logging source generator.
     /// </summary>
-    public readonly struct LogStateHolder<T1, T2, T3, T4, T5, T6> : IReadOnlyList<KeyValuePair<string, object?>>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public sealed class LogStateHolder<T1, T2, T3, T4, T5, T6> : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogStateHolder<T1, T2, T3, T4, T5, T6>, Exception?, string> _formatFunc;
         private readonly string[] _names;
@@ -289,7 +303,8 @@ namespace Microsoft.Extensions.Logging.Internal
     /// <summary>
     /// Implementation detail of the logging source generator.
     /// </summary>
-    public readonly struct LogStateHolderN : IReadOnlyList<KeyValuePair<string, object?>>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public sealed class LogStateHolderN : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogStateHolderN, Exception?, string> _formatFunc;
         private readonly KeyValuePair<string, object?>[] _kvp;

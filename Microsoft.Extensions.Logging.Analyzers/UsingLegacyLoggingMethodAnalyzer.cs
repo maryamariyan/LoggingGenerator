@@ -30,12 +30,13 @@ namespace Microsoft.Extensions.Logging.Analyzers
             context.RegisterCompilationStartAction(compilationStartContext =>
             {
                 var loggerExtensions = compilationStartContext.Compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
-#pragma warning disable RS1024 // Compare symbols correctly
-                var legacyMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
-#pragma warning restore RS1024 // Compare symbols correctly
 
                 if (loggerExtensions != null)
                 {
+#pragma warning disable RS1024 // Compare symbols correctly
+                    var legacyMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+#pragma warning restore RS1024 // Compare symbols correctly
+
                     legacyMethods.UnionWith(loggerExtensions.GetMembers("LogTrace").OfType<IMethodSymbol>());
                     legacyMethods.UnionWith(loggerExtensions.GetMembers("LogDebug").OfType<IMethodSymbol>());
                     legacyMethods.UnionWith(loggerExtensions.GetMembers("LogInformation").OfType<IMethodSymbol>());
@@ -43,27 +44,27 @@ namespace Microsoft.Extensions.Logging.Analyzers
                     legacyMethods.UnionWith(loggerExtensions.GetMembers("LogError").OfType<IMethodSymbol>());
                     legacyMethods.UnionWith(loggerExtensions.GetMembers("LogCritical").OfType<IMethodSymbol>());
                     legacyMethods.UnionWith(loggerExtensions.GetMembers("Log").OfType<IMethodSymbol>());
-                }
 
-                compilationStartContext.RegisterOperationBlockStartAction(operationBlockContext =>
-                {
-                    if (operationBlockContext.OwningSymbol.Kind != SymbolKind.Method)
+                    compilationStartContext.RegisterOperationBlockStartAction(operationBlockContext =>
                     {
-                        return;
-                    }
-
-                    operationBlockContext.RegisterOperationAction(operationContext =>
-                    {
-                        var invocationOp = (IInvocationOperation)operationContext.Operation;
-                        var method = invocationOp.TargetMethod;
-
-                        if (legacyMethods.Contains(method.OriginalDefinition))
+                        if (operationBlockContext.OwningSymbol.Kind != SymbolKind.Method)
                         {
-                            var diagnostic = Diagnostic.Create(DiagDescriptors.UsingLegacyLoggingMethod, invocationOp.Syntax.GetLocation());
-                            operationContext.ReportDiagnostic(diagnostic);
+                            return;
                         }
-                    }, OperationKind.Invocation);
-                });
+
+                        operationBlockContext.RegisterOperationAction(operationContext =>
+                        {
+                            var invocationOp = (IInvocationOperation)operationContext.Operation;
+                            var method = invocationOp.TargetMethod;
+
+                            if (legacyMethods.Contains(method.OriginalDefinition))
+                            {
+                                var diagnostic = Diagnostic.Create(DiagDescriptors.UsingLegacyLoggingMethod, invocationOp.Syntax.GetLocation());
+                                operationContext.ReportDiagnostic(diagnostic);
+                            }
+                        }, OperationKind.Invocation);
+                    });
+                }
             });
         }
     }

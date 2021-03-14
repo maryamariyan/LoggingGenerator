@@ -1,4 +1,4 @@
-// © Microsoft Corporation. All rights reserved.
+// Â© Microsoft Corporation. All rights reserved.
 
 using System;
 using System.Collections.Generic;
