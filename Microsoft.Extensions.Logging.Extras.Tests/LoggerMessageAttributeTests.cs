@@ -21,7 +21,7 @@ namespace Microsoft.Extensions.Logging.Test
 
             a = new LoggerMessageAttribute(42, "Foo");
             Assert.Equal(42, a.EventId);
-            Assert.Equal((LogLevel)(-1), a.Level);
+            Assert.False(a.Level.HasValue);
             Assert.Equal("Foo", a.Message);
             Assert.Null(a.EventName);
 
