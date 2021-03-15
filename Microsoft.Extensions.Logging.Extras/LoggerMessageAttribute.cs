@@ -34,7 +34,7 @@ namespace Microsoft.Extensions.Logging
         ///     static partial void CouldNotOpenSocket(ILogger logger, string hostName);
         /// }
         /// </example>
-        public LoggerMessageAttribute(int eventId, LogLevel level, string message)
+        public LoggerMessageAttribute(int eventId, LogLevel level, string? message = null)
         {
             (EventId, Level, Message) = (eventId, level, message);
         }
@@ -44,7 +44,8 @@ namespace Microsoft.Extensions.Logging
         /// which is used to guide the production of a strongly-typed logging method.
         /// </summary>
         /// <param name="eventId">The stable event id for this log message.</param>
-        /// <param name="message">The message text output by the logging method. This string is a template that can contain any of the method's parameters.</param>
+        /// <param name="message">The message text output by the logging method. This string is a template that can contain any of the method's parameters.
+        /// If this is null, then the message will be an auto-generated JSON fragment containing the logging method arguments.</param>
         /// <remarks>
         /// This overload is not commonly used. In general, the overload that accepts a <see cref="Microsoft.Extensions.Logging.LogLevel" />
         /// value is preferred.
@@ -62,13 +63,12 @@ namespace Microsoft.Extensions.Logging
         /// static partial class Log
         /// {
         ///     [LoggerMessage(0, "Could not open socket for {hostName}")]
-        ///     static partial void CouldNotOpenSocket(ILogger logger, string hostName);
+        ///     static partial void CouldNotOpenSocket(ILogger logger, LogLevel level, string hostName);
         /// }
         /// </example>
-        public LoggerMessageAttribute(int eventId, string message)
+        public LoggerMessageAttribute(int eventId, string? message = null)
         {
             (EventId, Message) = (eventId, message);
-            Level = (LogLevel)(-1);
         }
 #pragma warning restore SA1629 // Documentation text should end with a period
 
@@ -88,11 +88,11 @@ namespace Microsoft.Extensions.Logging
         /// <summary>
         /// Gets the logging level for the logging method.
         /// </summary>
-        public LogLevel Level { get; }
+        public LogLevel? Level { get; }
 
         /// <summary>
         /// Gets the message text for the logging method.
         /// </summary>
-        public string Message { get; }
+        public string? Message { get; }
     }
 }

@@ -25,7 +25,7 @@ a different naming scheme for general consumption.
 
 Anyway, feel free to use this as-is but there's no compatibility guarantee. Use at your own risks.
 
-## Analyzer and Fixes
+## Analyzer and Fixer
 
 The Microsoft.Extensions.Logging.Analyzers project contains an analyzer that produces a warning
 for any uses of the legacy LoggerExtensions.Log<Debug|Information|Warning|Error|Critical|Trace>() 
