@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging.Internal;
 using Xunit;
 
@@ -12,10 +13,13 @@ namespace Microsoft.Extensions.Logging.Test
         [Fact]
         public void NoType()
         {
-            var kvp = Array.Empty<KeyValuePair<string, object?>>();
+            var kvp = new[]
+            {
+                new KeyValuePair<string, object?>("{OriginalFormat}", "Foo"),
+            };
 
             Func<LogStateHolder, Exception?, string> f = (_, _) => "TestData";
-            var s = new LogStateHolder(f);
+            var s = new LogStateHolder(f, "Foo");
             TestCollection(kvp, s);
             Assert.Equal("TestData", s.ToString());
         }
@@ -26,10 +30,11 @@ namespace Microsoft.Extensions.Logging.Test
             var kvp = new[]
             {
                 new KeyValuePair<string, object?>("name1", 1),
+                new KeyValuePair<string, object?>("{OriginalFormat}", "Foo"),
             };
 
             Func<LogStateHolder<int>, Exception?, string> f = (_, _) => "TestData";
-            var s = new LogStateHolder<int>(f, "name1", 1);
+            var s = new LogStateHolder<int>(f, "Foo", "name1", 1);
             TestCollection(kvp, s);
             Assert.Equal(kvp[0].Value, s.Value);
             Assert.Equal("TestData", s.ToString());
@@ -42,10 +47,11 @@ namespace Microsoft.Extensions.Logging.Test
             {
                 new KeyValuePair<string, object?>("name1", 1),
                 new KeyValuePair<string, object?>("name2", 2),
+                new KeyValuePair<string, object?>("{OriginalFormat}", "Foo"),
             };
 
             Func<LogStateHolder<int, int>, Exception?, string> f = (_, _) => "TestData";
-            var s = new LogStateHolder<int, int>(f, new[] { "name1", "name2" }, 1, 2);
+            var s = new LogStateHolder<int, int>(f, "Foo", new[] { "name1", "name2" }, 1, 2);
             TestCollection(kvp, s);
             Assert.Equal(kvp[0].Value, s.Value1);
             Assert.Equal(kvp[1].Value, s.Value2);
@@ -60,10 +66,11 @@ namespace Microsoft.Extensions.Logging.Test
                 new KeyValuePair<string, object?>("name1", 1),
                 new KeyValuePair<string, object?>("name2", 2),
                 new KeyValuePair<string, object?>("name3", 3),
+                new KeyValuePair<string, object?>("{OriginalFormat}", "Foo"),
             };
 
             Func<LogStateHolder<int, int, int>, Exception?, string> f = (_, _) => "TestData";
-            var s = new LogStateHolder<int, int, int>(f, new[] { "name1", "name2", "name3" }, 1, 2, 3);
+            var s = new LogStateHolder<int, int, int>(f, "Foo", new[] { "name1", "name2", "name3" }, 1, 2, 3);
             TestCollection(kvp, s);
             Assert.Equal(kvp[0].Value, s.Value1);
             Assert.Equal(kvp[1].Value, s.Value2);
@@ -80,10 +87,11 @@ namespace Microsoft.Extensions.Logging.Test
                 new KeyValuePair<string, object?>("name2", 2),
                 new KeyValuePair<string, object?>("name3", 3),
                 new KeyValuePair<string, object?>("name4", 4),
+                new KeyValuePair<string, object?>("{OriginalFormat}", "Foo"),
             };
 
             Func<LogStateHolder<int, int, int, int>, Exception?, string> f = (_, _) => "TestData";
-            var s = new LogStateHolder<int, int, int, int>(f, new[] { "name1", "name2", "name3", "name4" }, 1, 2, 3, 4);
+            var s = new LogStateHolder<int, int, int, int>(f, "Foo", new[] { "name1", "name2", "name3", "name4" }, 1, 2, 3, 4);
             TestCollection(kvp, s);
             Assert.Equal(kvp[0].Value, s.Value1);
             Assert.Equal(kvp[1].Value, s.Value2);
@@ -102,10 +110,11 @@ namespace Microsoft.Extensions.Logging.Test
                 new KeyValuePair<string, object?>("name3", 3),
                 new KeyValuePair<string, object?>("name4", 4),
                 new KeyValuePair<string, object?>("name5", 5),
+                new KeyValuePair<string, object?>("{OriginalFormat}", "Foo"),
             };
 
             Func<LogStateHolder<int, int, int, int, int>, Exception?, string> f = (_, _) => "TestData";
-            var s = new LogStateHolder<int, int, int, int, int>(f, new[] { "name1", "name2", "name3", "name4", "name5" }, 1, 2, 3, 4, 5);
+            var s = new LogStateHolder<int, int, int, int, int>(f, "Foo", new[] { "name1", "name2", "name3", "name4", "name5" }, 1, 2, 3, 4, 5);
             TestCollection(kvp, s);
             Assert.Equal(kvp[0].Value, s.Value1);
             Assert.Equal(kvp[1].Value, s.Value2);
@@ -126,10 +135,11 @@ namespace Microsoft.Extensions.Logging.Test
                 new KeyValuePair<string, object?>("name4", 4),
                 new KeyValuePair<string, object?>("name5", 5),
                 new KeyValuePair<string, object?>("name6", 6),
+                new KeyValuePair<string, object?>("{OriginalFormat}", "Foo"),
             };
 
             Func<LogStateHolder<int, int, int, int, int, int>, Exception?, string> f = (_, _) => "TestData";
-            var s = new LogStateHolder<int, int, int, int, int, int>(f, new[] { "name1", "name2", "name3", "name4", "name5", "name6" }, 1, 2, 3, 4, 5, 6);
+            var s = new LogStateHolder<int, int, int, int, int, int>(f, "Foo", new[] { "name1", "name2", "name3", "name4", "name5", "name6" }, 1, 2, 3, 4, 5, 6);
             TestCollection(kvp, s);
             Assert.Equal(kvp[0].Value, s.Value1);
             Assert.Equal(kvp[1].Value, s.Value2);
@@ -154,16 +164,29 @@ namespace Microsoft.Extensions.Logging.Test
                 new KeyValuePair<string, object?>("name7", 7),
             };
 
+            var kvp2 = new[]
+            {
+                new KeyValuePair<string, object?>("name1", 1),
+                new KeyValuePair<string, object?>("name2", 2),
+                new KeyValuePair<string, object?>("name3", 3),
+                new KeyValuePair<string, object?>("name4", 4),
+                new KeyValuePair<string, object?>("name5", 5),
+                new KeyValuePair<string, object?>("name6", 6),
+                new KeyValuePair<string, object?>("name7", 7),
+                new KeyValuePair<string, object?>("{OriginalFormat}", "Foo"),
+            };
+
             Func<LogStateHolderN, Exception?, string> f = (_, _) => "TestData";
-            var s = new LogStateHolderN(f, kvp);
-            TestCollection(kvp, s);
-            Assert.Equal(kvp[0].Value, s[0].Value);
-            Assert.Equal(kvp[1].Value, s[1].Value);
-            Assert.Equal(kvp[2].Value, s[2].Value);
-            Assert.Equal(kvp[3].Value, s[3].Value);
-            Assert.Equal(kvp[4].Value, s[4].Value);
-            Assert.Equal(kvp[5].Value, s[5].Value);
-            Assert.Equal(kvp[6].Value, s[6].Value);
+            var s = new LogStateHolderN(f, "Foo", kvp);
+            TestCollection(kvp2, s);
+            Assert.Equal(kvp2[0].Value, s[0].Value);
+            Assert.Equal(kvp2[1].Value, s[1].Value);
+            Assert.Equal(kvp2[2].Value, s[2].Value);
+            Assert.Equal(kvp2[3].Value, s[3].Value);
+            Assert.Equal(kvp2[4].Value, s[4].Value);
+            Assert.Equal(kvp2[5].Value, s[5].Value);
+            Assert.Equal(kvp2[6].Value, s[6].Value);
+            Assert.Equal(kvp2[7].Value, s[7].Value);
             Assert.Equal("TestData", s.ToString());
         }
 
