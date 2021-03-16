@@ -19,7 +19,7 @@ logging methods.
 
 ## Examples
 
-Here is an example interface written by a developer, followed by the code being auto-generated.
+Here is an example class written by a developer, followed by the code being auto-generated.
 
 ```csharp
 static partial class Log
