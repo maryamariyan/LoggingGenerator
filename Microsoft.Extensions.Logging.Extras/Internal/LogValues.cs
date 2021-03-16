@@ -21,12 +21,12 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class LogStateHolder : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues : IReadOnlyList<KeyValuePair<string, object?>>
     {
-        private readonly Func<LogStateHolder, Exception?, string> _formatFunc;
+        private readonly Func<LogValues, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
 
-        public LogStateHolder(Func<LogStateHolder, Exception?, string> formatFunc, string originalFormat)
+        public LogValues(Func<LogValues, Exception?, string> formatFunc, string originalFormat)
         {
             _formatFunc = formatFunc;
             _originalFormat = originalFormat;
@@ -52,13 +52,13 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class LogStateHolder<T> : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues<T> : IReadOnlyList<KeyValuePair<string, object?>>
     {
-        private readonly Func<LogStateHolder<T>, Exception?, string> _formatFunc;
+        private readonly Func<LogValues<T>, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
         private readonly string _name;
 
-        public LogStateHolder(Func<LogStateHolder<T>, Exception?, string> formatFunc, string originalFormat, string name, T value)
+        public LogValues(Func<LogValues<T>, Exception?, string> formatFunc, string originalFormat, string name, T value)
         {
             _formatFunc = formatFunc;
             _originalFormat = originalFormat;
@@ -89,13 +89,13 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class LogStateHolder<T1, T2> : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues<T1, T2> : IReadOnlyList<KeyValuePair<string, object?>>
     {
-        private readonly Func<LogStateHolder<T1, T2>, Exception?, string> _formatFunc;
+        private readonly Func<LogValues<T1, T2>, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
         private readonly string[] _names;
 
-        public LogStateHolder(Func<LogStateHolder<T1, T2>, Exception?, string> formatFunc, string originalFormat, string[] names, T1 value1, T2 value2)
+        public LogValues(Func<LogValues<T1, T2>, Exception?, string> formatFunc, string originalFormat, string[] names, T1 value1, T2 value2)
         {
             _formatFunc = formatFunc;
             _originalFormat = originalFormat;
@@ -131,13 +131,13 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class LogStateHolder<T1, T2, T3> : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues<T1, T2, T3> : IReadOnlyList<KeyValuePair<string, object?>>
     {
-        private readonly Func<LogStateHolder<T1, T2, T3>, Exception?, string> _formatFunc;
+        private readonly Func<LogValues<T1, T2, T3>, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
         private readonly string[] _names;
 
-        public LogStateHolder(Func<LogStateHolder<T1, T2, T3>, Exception?, string> formatFunc, string originalFormat, string[] names, T1 value1, T2 value2, T3 value3)
+        public LogValues(Func<LogValues<T1, T2, T3>, Exception?, string> formatFunc, string originalFormat, string[] names, T1 value1, T2 value2, T3 value3)
         {
             _formatFunc = formatFunc;
             _originalFormat = originalFormat;
@@ -176,13 +176,13 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class LogStateHolder<T1, T2, T3, T4> : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues<T1, T2, T3, T4> : IReadOnlyList<KeyValuePair<string, object?>>
     {
-        private readonly Func<LogStateHolder<T1, T2, T3, T4>, Exception?, string> _formatFunc;
+        private readonly Func<LogValues<T1, T2, T3, T4>, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
         private readonly string[] _names;
 
-        public LogStateHolder(Func<LogStateHolder<T1, T2, T3, T4>, Exception?, string> formatFunc, string originalFormat, string[] names, T1 value1, T2 value2, T3 value3, T4 value4)
+        public LogValues(Func<LogValues<T1, T2, T3, T4>, Exception?, string> formatFunc, string originalFormat, string[] names, T1 value1, T2 value2, T3 value3, T4 value4)
         {
             _formatFunc = formatFunc;
             _originalFormat = originalFormat;
@@ -224,13 +224,13 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class LogStateHolder<T1, T2, T3, T4, T5> : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues<T1, T2, T3, T4, T5> : IReadOnlyList<KeyValuePair<string, object?>>
     {
-        private readonly Func<LogStateHolder<T1, T2, T3, T4, T5>, Exception?, string> _formatFunc;
+        private readonly Func<LogValues<T1, T2, T3, T4, T5>, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
         private readonly string[] _names;
 
-        public LogStateHolder(Func<LogStateHolder<T1, T2, T3, T4, T5>, Exception?, string> formatFunc, string originalFormat, string[] names, T1 value1, T2 value2, T3 value3, T4 value4, T5 value5)
+        public LogValues(Func<LogValues<T1, T2, T3, T4, T5>, Exception?, string> formatFunc, string originalFormat, string[] names, T1 value1, T2 value2, T3 value3, T4 value4, T5 value5)
         {
             _formatFunc = formatFunc;
             _originalFormat = originalFormat;
@@ -275,14 +275,14 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class LogStateHolder<T1, T2, T3, T4, T5, T6> : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues<T1, T2, T3, T4, T5, T6> : IReadOnlyList<KeyValuePair<string, object?>>
     {
-        private readonly Func<LogStateHolder<T1, T2, T3, T4, T5, T6>, Exception?, string> _formatFunc;
+        private readonly Func<LogValues<T1, T2, T3, T4, T5, T6>, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
         private readonly string[] _names;
 
 #pragma warning disable S107 // Methods should not have too many parameters
-        public LogStateHolder(Func<LogStateHolder<T1, T2, T3, T4, T5, T6>, Exception?, string> formatFunc, string originalFormat, string[] names, T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6)
+        public LogValues(Func<LogValues<T1, T2, T3, T4, T5, T6>, Exception?, string> formatFunc, string originalFormat, string[] names, T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6)
 #pragma warning restore S107 // Methods should not have too many parameters
         {
             _formatFunc = formatFunc;
@@ -331,13 +331,13 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public sealed class LogStateHolderN : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValuesN : IReadOnlyList<KeyValuePair<string, object?>>
     {
-        private readonly Func<LogStateHolderN, Exception?, string> _formatFunc;
+        private readonly Func<LogValuesN, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
         private readonly KeyValuePair<string, object?>[] _kvp;
 
-        public LogStateHolderN(Func<LogStateHolderN, Exception?, string> formatFunc, string originalFormat, KeyValuePair<string, object?>[] kvp)
+        public LogValuesN(Func<LogValuesN, Exception?, string> formatFunc, string originalFormat, KeyValuePair<string, object?>[] kvp)
         {
             _formatFunc = formatFunc;
             _originalFormat = originalFormat;

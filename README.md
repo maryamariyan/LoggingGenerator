@@ -48,7 +48,7 @@ ststic partial class Log
             __logger.Log(
                 global::Microsoft.Extensions.Logging.LogLevel.Critical,
                 new global::Microsoft.Extensions.Logging.EventId(0, nameof(CouldNotOpenSocket)),
-                new global::Microsoft.Extensions.Logging.LogStateHolder<string>(nameof(hostName), hostName),
+                new global::Microsoft.Extensions.Logging.Internal.LogValues<string>(nameof(hostName), hostName),
                 null,
                 __CouldNotOpenSocketFormatFunc);
         }
