@@ -77,8 +77,8 @@ class MyLogWrapper
 }
 ```
 
-Sometime, the logging level needs to be a dynamic property rather than being statically built into the code. You can do this by omiting the logging level 
-from the attribute and instead supplying it as an argument to the logging method
+Sometimes, the logging level needs to be a dynamic property rather than being statically built into the code. You can do this by omitting the logging level
+from the attribute and instead supplying it as an argument to the logging method:
 
 ```csharp
 static partial class Log
@@ -88,7 +88,7 @@ static partial class Log
 }
 ```
 
-You can omit the logging message and a default one will be provided for you that formats the arguments into a JSON-encoded string.
+You can omit the logging message and a default one will be provided for you that formats the arguments into a JSON-encoded string:
 
 ```csharp
 static partial class Log

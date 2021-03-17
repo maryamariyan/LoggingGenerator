@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Microsoft.Extensions.Logging.Internal
 {
-    // legit use of magic number for indices
+    // legit use of magic numbers for indices
 #pragma warning disable S109 // Magic numbers should not be used
 
     // This file contains internal types exposed for use by generated code
@@ -220,6 +220,8 @@ namespace Microsoft.Extensions.Logging.Internal
         };
     }
 
+#pragma warning disable S107 // Methods should not have too many parameters
+
     /// <summary>
     /// Implementation detail of the logging source generator.
     /// </summary>
@@ -281,9 +283,16 @@ namespace Microsoft.Extensions.Logging.Internal
         private readonly string _originalFormat;
         private readonly string[] _names;
 
-#pragma warning disable S107 // Methods should not have too many parameters
-        public LogValues(Func<LogValues<T1, T2, T3, T4, T5, T6>, Exception?, string> formatFunc, string originalFormat, string[] names, T1 value1, T2 value2, T3 value3, T4 value4, T5 value5, T6 value6)
-#pragma warning restore S107 // Methods should not have too many parameters
+        public LogValues(
+            Func<LogValues<T1, T2, T3, T4, T5, T6>, Exception?, string> formatFunc,
+            string originalFormat,
+            string[] names,
+            T1 value1,
+            T2 value2,
+            T3 value3,
+            T4 value4,
+            T5 value5,
+            T6 value6)
         {
             _formatFunc = formatFunc;
             _originalFormat = originalFormat;

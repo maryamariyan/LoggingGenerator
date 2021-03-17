@@ -1,6 +1,5 @@
 // © Microsoft Corporation. All rights reserved.
 
-using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Microsoft.Extensions.Logging.Test
