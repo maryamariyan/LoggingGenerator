@@ -17,14 +17,14 @@ namespace Microsoft.Extensions.Logging
         /// </summary>
         /// <param name="eventId">The stable event id for this log message.</param>
         /// <param name="level">The logging level produced when invoking the strongly-typed logging method.</param>
-        /// <param name="message">The message text output by the logging method. This string is a template that can contain any of the method's parameters.</param>
+        /// <param name="message">The message text output by the logging method. This string is a template that can contain any of the method's parameters.
+        /// If this is null, then the message will be an auto-generated JSON fragment containing the logging method arguments.</param>
         /// <remarks>
         /// The method this attribute is applied to:
         ///    - Must be a partial method.
-        ///    - Must be a static method.
         ///    - Must return <c>void</c>.
         ///    - Must not be generic.
-        ///    - Must have an <see cref="ILogger" /> as first parameter.
+        ///    - Must have an <see cref="ILogger"/> as one of its parameters.
         ///    - None of the parameters can be generic.
         /// </remarks>
         /// <example>
@@ -52,11 +52,10 @@ namespace Microsoft.Extensions.Logging
         ///
         /// The method this attribute is applied to:
         ///    - Must be a partial method.
-        ///    - Must be a static method.
         ///    - Must return <c>void</c>.
         ///    - Must not be generic.
-        ///    - Must have an <see cref="ILogger"/> as first parameter.
-        ///    - Must have a <see cref="LogLevel"/> as second parameter.
+        ///    - Must have an <see cref="ILogger"/> as one of its parameters.
+        ///    - Must have a <see cref="Microsoft.Extensions.Logging.LogLevel"/> as one of its parameters.
         ///    - None of the parameters can be generic.
         /// </remarks>
         /// <example>
