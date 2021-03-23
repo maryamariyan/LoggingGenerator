@@ -1,0 +1,35 @@
+﻿jobs:
+  server:
+    source:
+      localFolder: .
+      project: PerfRunner.csproj
+    readyStateText: Application started.
+    waitForExit: true
+scenarios:
+  runner:
+    application:
+      framework: net6.0
+      job: server
+      options:
+        collectCounters: true
+        displayoutput: true
+      sdkversion: 6.0.100-preview.3.21162.43
+profiles:
+  remote-win:
+    jobs: 
+      application:
+        endpoints: 
+          - http://asp-perf-win:5001
+scripts:
+    adjust_counters_win: |
+        benchmarks.jobs.application.results["benchmarks/start-time"] = benchmarks.jobs.application.results["benchmarks/start-time"] - 108.5;
+        if (benchmarks.jobs.application.results["benchmarks/start-time"] < 0) {
+            benchmarks.jobs.application.results["benchmarks/start-time"] = 0;
+        }
+
+        benchmarks.jobs.application.results["runtime/private-bytes"] = benchmarks.jobs.application.results["runtime/private-bytes"] - 9520.0;
+        if (benchmarks.jobs.application.results["runtime/private-bytes"] < 0) {
+            benchmarks.jobs.application.results["runtime/private-bytes"]  = 0;
+        }
+
+        benchmarks.jobs.application.results["application/net-start-time"]  = benchmarks.jobs.application.results["benchmarks/start-time"] + benchmarks.jobs.application.results["application/elapsed-time"]
