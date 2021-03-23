@@ -33,6 +33,9 @@ namespace Example
         [LoggerMessage(9, LogLevel.Debug, @"Connection id '{connectionId}' completed keep alive response.")]
         public static partial void ConnectionKeepAlive(ILogger logger, string connectionId);
 
+        [LoggerMessage(19, LogLevel.Trace, "Fixed message", EventName = "CustomEventName")]
+        internal static partial void LogWithCustomEventName(this ILogger logger);
+
         [LoggerMessage(38, LogLevel.Debug, @"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags}")]
         public static partial void Http2FrameReceived(ILogger logger, string connectionId, byte type, int streamId, int length, byte flags);
 
@@ -41,6 +44,9 @@ namespace Example
         {
             Http2FrameReceived(logger, connectionId, http2Frame.Type, http2Frame.StreamId, http2Frame.PayloadLength, http2Frame.Flags);
         }
+
+        [LoggerMessage(22, LogLevel.Trace)]
+        public static partial void LogWithNoTemplate(ILogger logger, string key1, string key2);
     }
 
     public class Http2Frame
