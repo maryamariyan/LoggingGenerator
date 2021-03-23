@@ -7,10 +7,10 @@
           "netSdkVersion": "6.0.100-preview.3.21162.43",
           "aspNetCoreVersion": "6.0.0-preview.3.21172.8+fb3092b",
           "netCoreAppVersion": "6.0.0-preview.3.21169.6+76954b4",
-          "benchmarks/build-time": 2888.0,
+          "benchmarks/build-time": 2899.5,
           "benchmarks/published-size": 65676.0,
-          "benchmarks/start-time": 106.0,
-          "runtime/private-bytes": 9542.0,
+          "benchmarks/start-time": 107.5,
+          "runtime/private-bytes": 9550.0,
           "application/elapsed-time": 1.0
         },
         "metadata": [

@@ -15,7 +15,6 @@ namespace Benchmark
         }
     }
 
-    [ShortRunJob]
     [MemoryDiagnoser]
     public class LogBenchmark
     {
@@ -39,7 +38,7 @@ namespace Benchmark
                 })
                 .BuildServiceProvider();
             //logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger<LogBenchmark>();
-            logger = NullLogger.Instance;
+            logger = NilLogger.Instance;
             _s1 = "some string";
             _s2 = "some string some string";
             _s3 = "some string some string some string";
@@ -49,17 +48,17 @@ namespace Benchmark
 
             logIterationGeneric6 = LoggerMessage.Define<string, string, string, string, string, string>(LogLevel.Debug,
                             eventId: 6,
-                            formatString: @"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} s {flags}");
+                            formatString: @"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} and {other}");
         }
 
         [Benchmark]
-        public void LogGeneric6Before()
+        public void LogGeneric6UsingDefine()
         {
             logIterationGeneric6(logger, _s1, _s2, _s3, _s4, _s5, _s6, null);
         }
 
         [Benchmark]
-        public void LogGeneric6After()
+        public void LogGeneric6Generated()
         {
             Log.LogTest(logger, _s1, _s2, _s3, _s4, _s5, _s6);
         }

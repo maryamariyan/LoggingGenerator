@@ -36,7 +36,7 @@ namespace VSProfiler.Controllers
 
             _logIterationGeneric6 = LoggerMessage.Define<string, string, string, string, string, string>(LogLevel.Debug,
                 eventId: 6,
-                formatString: @"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} s {flags}");
+                formatString: @"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} and {other}");
         }
 
         public IActionResult Index()
