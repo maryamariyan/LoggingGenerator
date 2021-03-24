@@ -1,73 +1,164 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System;
+using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using System;
 
 namespace Benchmark
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static void Main()
         {
             var summary = BenchmarkRunner.Run<LogBenchmark>();
         }
     }
 
+#pragma warning disable CA1822 // Mark members as static
+#pragma warning disable LA0000 // Switch to updated logging methods using the [LoggerMessage] attribute for additional performance.
+
     [ShortRunJob]
     [MemoryDiagnoser]
     public class LogBenchmark
     {
-        private ServiceProvider serviceProvider;
-        private static Action<ILogger, string, string, string, string, string, string, Exception> logIterationGeneric6;
-        private ILogger logger;
-        private string _s1;
-        private string _s2;
-        private string _s3;
-        private string _s4;
-        private string _s5;
-        private string _s6;
-
-        [GlobalSetup]
-        public void GlobalSetup()
-        {
-            serviceProvider = new ServiceCollection()
-                .AddLogging(logBuilder =>
-                {
-                    logBuilder.AddConsole();
-                })
-                .BuildServiceProvider();
-            //logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger<LogBenchmark>();
-            logger = NullLogger.Instance;
-            _s1 = "some string";
-            _s2 = "some string some string";
-            _s3 = "some string some string some string";
-            _s4 = "some string some string some string some string";
-            _s5 = "some string some string some string some string some string";
-            _s6 = "some string some string some string some string some string some string";
-
-            logIterationGeneric6 = LoggerMessage.Define<string, string, string, string, string, string>(LogLevel.Debug,
-                            eventId: 6,
+        private static Action<ILogger, string, string, string, string, string, string, Exception?> _loggerMessage1 = LoggerMessage.Define<string, string, string, string, string, string>(LogLevel.Debug,
+                            eventId: 380,
                             formatString: @"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} and {other}");
+
+        private static Action<ILogger, string, long, long, int, Exception?> _loggerMessage2 = LoggerMessage.Define<string, long, long, int>(LogLevel.Debug,
+                            eventId: 381,
+                            formatString: @"Connection id '{connectionId}', range [{start}..{end}], options {options}");
+
+        private static MockLogger _logger = new MockLogger();
+        private const string ConnectionId = "0x345334534678";
+        private const string Type = "some string";
+        private const string StreamId = "some string some string";
+        private const string Length = "some string some string some string";
+        private const string Flags = "some string some string some string some string";
+        private const string Other = "some string some string some string some string some string";
+        private const long Start = 42;
+        private const long End = 123456789;
+        private const int Options = 0x1234;
+
+        private const int NumLoops = 1000;
+
+        [Benchmark]
+        public void ClassicLogging1()
+        {
+            _logger.Enabled = true;
+            for (int i = 0; i < NumLoops; i++)
+            {
+                _logger.LogDebug(@"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} and {other}", ConnectionId, Type, StreamId, Length, Flags, Other);
+            }
         }
 
         [Benchmark]
-        public void LogGeneric6Before()
+        public void ClassicLogging2()
         {
-            logIterationGeneric6(logger, _s1, _s2, _s3, _s4, _s5, _s6, null);
+            _logger.Enabled = true;
+            for (int i = 0; i < NumLoops; i++)
+            {
+                _logger.LogDebug(@"Connection id '{connectionId}', range [{start}..{end}], options {options}", ConnectionId, Start, End, Options);
+            }
         }
 
         [Benchmark]
-        public void LogGeneric6After()
+        public void LoggerMessage1()
         {
-            Log.LogTest(logger, _s1, _s2, _s3, _s4, _s5, _s6);
+            _logger.Enabled = true;
+            for (int i = 0; i < NumLoops; i++)
+            {
+                _loggerMessage1(_logger, ConnectionId, Type, StreamId, Length, Flags, Other, null);
+            }
         }
 
-        [GlobalCleanup]
-        public void GlobalCleanup()
+        [Benchmark]
+        public void LoggerMessage2()
         {
-            serviceProvider.Dispose();
+            _logger.Enabled = true;
+            for (int i = 0; i < NumLoops; i++)
+            {
+                _loggerMessage2(_logger, ConnectionId, Start, End, Options, null);
+            }
+        }
+
+        [Benchmark]
+        public void LogGen1()
+        {
+            _logger.Enabled = true;
+            for (int i = 0; i < NumLoops; i++)
+            {
+                Log.LogGen1(_logger, ConnectionId, Type, StreamId, Length, Flags, Other);
+            }
+        }
+
+        [Benchmark]
+        public void LogGen2()
+        {
+            _logger.Enabled = true;
+            for (int i = 0; i < NumLoops; i++)
+            {
+                Log.LogGen2(_logger, ConnectionId, Start, End, Options);
+            }
+        }
+
+        [Benchmark]
+        public void ClassicLogging1Disabled()
+        {
+            _logger.Enabled = false;
+            for (int i = 0; i < NumLoops; i++)
+            {
+                _logger.LogDebug(@"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} and {other}", ConnectionId, Type, StreamId, Length, Flags, Other);
+            }
+        }
+
+        [Benchmark]
+        public void ClassicLogging2Disabled()
+        {
+            _logger.Enabled = false;
+            for (int i = 0; i < NumLoops; i++)
+            {
+                _logger.LogDebug(@"Connection id '{connectionId}', range [{start}..{end}], options {options}", ConnectionId, Start, End, Options);
+            }
+        }
+
+        [Benchmark]
+        public void LoggerMessage1Disabled()
+        {
+            _logger.Enabled = false;
+            for (int i = 0; i < NumLoops; i++)
+            {
+                _loggerMessage1(_logger, ConnectionId, Type, StreamId, Length, Flags, Other, null);
+            }
+        }
+
+        [Benchmark]
+        public void LoggerMessage2Disabled()
+        {
+            _logger.Enabled = false;
+            for (int i = 0; i < NumLoops; i++)
+            {
+                _loggerMessage2(_logger, ConnectionId, Start, End, Options, null);
+            }
+        }
+
+        [Benchmark]
+        public void LogGen1Disabled()
+        {
+            _logger.Enabled = false;
+            for (int i = 0; i < NumLoops; i++)
+            {
+                Log.LogGen1(_logger, ConnectionId, Type, StreamId, Length, Flags, Other);
+            }
+        }
+
+        [Benchmark]
+        public void LogGen2Disabled()
+        {
+            _logger.Enabled = false;
+            for (int i = 0; i < NumLoops; i++)
+            {
+                Log.LogGen2(_logger, ConnectionId, Start, End, Options);
+            }
         }
     }
 }

@@ -4,3 +4,4 @@
 TestResults/*
 .idea/*
 LoggingGenerator.sln.DotSettings.user
+Benchmark/BenchmarkDotNet.Artifacts
