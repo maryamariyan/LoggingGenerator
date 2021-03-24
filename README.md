@@ -126,6 +126,36 @@ a call to a legacy log method and have a shiny new strongly-typed logging method
 generated automatically. This makes it a snap to convert existing log uses to the new more
 efficient form.
 
+## Benchmark
+
+Here are the current benchmark results:
+
+```plain
+|                  Method |       Mean |      Error |     StdDev |    Gen 0 | Gen 1 | Gen 2 | Allocated |
+|------------------------ |-----------:|-----------:|-----------:|---------:|------:|------:|----------:|
+|         ClassicLogging1 | 927.357 us | 18.5083 us | 39.4428 us | 173.8281 |     - |     - |  728001 B |
+|         ClassicLogging2 | 586.637 us |  9.5880 us |  8.9686 us |  92.7734 |     - |     - |  392000 B |
+|          LoggerMessage1 | 844.514 us | 16.5958 us | 14.7117 us | 188.4766 |     - |     - |  792000 B |
+|          LoggerMessage2 | 528.927 us | 10.0096 us |  8.8732 us | 118.1641 |     - |     - |  496000 B |
+|                 LogGen1 | 733.230 us | 12.0292 us | 15.6413 us | 188.4766 |     - |     - |  792000 B |
+|                 LogGen2 | 513.936 us | 10.0079 us | 16.7210 us | 122.0703 |     - |     - |  512000 B |
+| ClassicLogging1Disabled | 995.989 us | 11.5435 us | 10.2330 us | 173.8281 |     - |     - |  728001 B |
+| ClassicLogging2Disabled | 649.658 us |  9.2190 us |  8.6234 us |  92.7734 |     - |     - |  392000 B |
+|  LoggerMessage1Disabled |   9.109 us |  0.0881 us |  0.0781 us |        - |     - |     - |         - |
+|  LoggerMessage2Disabled |   6.215 us |  0.0529 us |  0.0469 us |        - |     - |     - |         - |
+|         LogGen1Disabled |   6.643 us |  0.0602 us |  0.0534 us |        - |     - |     - |         - |
+|         LogGen2Disabled |   5.440 us |  0.0809 us |  0.0717 us |        - |     - |     - |         - |
+```
+
+Here are the numbers for the generated code if LogValues is a struct rather than a class.
+
+```plain
+|                  Method |       Mean |      Error |     StdDev |     Median |    Gen 0 | Gen 1 | Gen 2 | Allocated |
+|------------------------ |-----------:|-----------:|-----------:|-----------:|---------:|------:|------:|----------:|
+|                 LogGen1 | 935.561 us | 18.5950 us | 48.3308 us | 928.564 us | 204.1016 |     - |     - |  856000 B |
+|                 LogGen2 | 566.471 us | 10.8008 us | 10.1031 us | 564.110 us | 133.7891 |     - |     - |  560000 B |
+```
+
 ## Current State
 
 This is a general proposal for how this functionality can be integrated into the main .NET distribution. This is why

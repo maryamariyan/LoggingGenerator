@@ -16,7 +16,6 @@ namespace Benchmark
 #pragma warning disable CA1822 // Mark members as static
 #pragma warning disable LA0000 // Switch to updated logging methods using the [LoggerMessage] attribute for additional performance.
 
-    [ShortRunJob]
     [MemoryDiagnoser]
     public class LogBenchmark
     {
