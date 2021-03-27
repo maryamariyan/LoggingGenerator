@@ -100,7 +100,7 @@ static partial class Log
 
 ## Options
 
-The generator supports 3 global options that it recognizes:
+The generator supports 2 global options that it recognizes:
 
 * `PascalCaseArguments` : YES/NO
 
@@ -110,10 +110,6 @@ The generator supports 3 global options that it recognizes:
 * `EmitDefaultMessage` : YES/NO
 
     This controls whether to generate a default message when none is supplied in the attribute. This defaults to YES.
-
-* `FieldName` : &lt;field name&gt;
-
-    This controls the field name used when the logging methods are declared as instance methods. This defaults to `_logger`.
 
 ## Analyzer and Fixer
 
