@@ -45,7 +45,7 @@ namespace Benchmark
         {
             var dontRequireSlnToRunBenchmarks = ManualConfig
                 .Create(DefaultConfig.Instance)
-                .AddJob(Job.LongRun.WithToolchain(InProcessEmitToolchain.Instance));
+                .AddJob(Job.MediumRun.WithToolchain(InProcessEmitToolchain.Instance));
 
             _ = BenchmarkRunner.Run(typeof(Program), dontRequireSlnToRunBenchmarks);
         }
