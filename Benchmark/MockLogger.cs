@@ -15,6 +15,7 @@ namespace Benchmark
         {
             public void Dispose()
             {
+                // nothing to do
             }
         }
 

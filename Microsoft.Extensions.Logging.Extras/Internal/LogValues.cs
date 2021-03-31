@@ -20,7 +20,7 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LogValues : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogValues, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
@@ -51,7 +51,7 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LogValues<T> : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues<T> : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogValues<T>, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
@@ -88,7 +88,7 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LogValues<T1, T2> : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues<T1, T2> : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogValues<T1, T2>, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
@@ -130,7 +130,7 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LogValues<T1, T2, T3> : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues<T1, T2, T3> : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogValues<T1, T2, T3>, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
@@ -175,7 +175,7 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LogValues<T1, T2, T3, T4> : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues<T1, T2, T3, T4> : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogValues<T1, T2, T3, T4>, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
@@ -225,7 +225,7 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LogValues<T1, T2, T3, T4, T5> : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues<T1, T2, T3, T4, T5> : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogValues<T1, T2, T3, T4, T5>, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
@@ -276,7 +276,7 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LogValues<T1, T2, T3, T4, T5, T6> : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValues<T1, T2, T3, T4, T5, T6> : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogValues<T1, T2, T3, T4, T5, T6>, Exception?, string> _formatFunc;
         private readonly string _originalFormat;
@@ -339,7 +339,7 @@ namespace Microsoft.Extensions.Logging.Internal
     /// Implementation detail of the logging source generator.
     /// </summary>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LogValuesN : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class LogValuesN : IReadOnlyList<KeyValuePair<string, object?>>
     {
         private readonly Func<LogValuesN, Exception?, string> _formatFunc;
         private readonly string _originalFormat;

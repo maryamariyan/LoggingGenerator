@@ -1,33 +1,22 @@
-﻿using System;
-using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
-using Microsoft.Extensions.Logging;
+﻿// © Microsoft Corporation. All rights reserved.
 
-namespace Benchmark
-{
-    public class Program
-    {
-        public static void Main()
-        {
-            var summary = BenchmarkRunner.Run<LogBenchmark>();
-        }
-    }
+using System;
+using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Running;
+using BenchmarkDotNet.Toolchains.InProcess.Emit;
+using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1822 // Mark members as static
 #pragma warning disable LA0000 // Switch to updated logging methods using the [LoggerMessage] attribute for additional performance.
+#pragma warning disable R9A000 // Switch to updated logging methods using the [LoggerMessage] attribute for additional performance.
 
+namespace Benchmark
+{
     [MemoryDiagnoser]
-    public class LogBenchmark
+    public class Program
     {
-        private static Action<ILogger, string, string, string, string, string, string, Exception?> _loggerMessage1 = LoggerMessage.Define<string, string, string, string, string, string>(LogLevel.Debug,
-                            eventId: 380,
-                            formatString: @"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} and {other}");
-
-        private static Action<ILogger, string, long, long, int, Exception?> _loggerMessage2 = LoggerMessage.Define<string, long, long, int>(LogLevel.Debug,
-                            eventId: 381,
-                            formatString: @"Connection id '{connectionId}', range [{start}..{end}], options {options}");
-
-        private static MockLogger _logger = new MockLogger();
         private const string ConnectionId = "0x345334534678";
         private const string Type = "some string";
         private const string StreamId = "some string some string";
@@ -35,10 +24,31 @@ namespace Benchmark
         private const string Flags = "some string some string some string some string";
         private const string Other = "some string some string some string some string some string";
         private const long Start = 42;
-        private const long End = 123456789;
+        private const long End = 123_456_789;
         private const int Options = 0x1234;
 
-        private const int NumLoops = 1000;
+        private const int NumLoops = 100;
+
+        private static Action<ILogger, string, string, string, string, string, string, Exception?> _loggerMessage1 = LoggerMessage.Define<string, string, string, string, string, string>(
+            LogLevel.Debug,
+            eventId: 380,
+            formatString: @"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} and {other}");
+
+        private static Action<ILogger, string, long, long, int, Exception?> _loggerMessage2 = LoggerMessage.Define<string, long, long, int>(
+            LogLevel.Debug,
+            eventId: 381,
+            formatString: @"Connection id '{connectionId}', range [{start}..{end}], options {options}");
+
+        private static MockLogger _logger = new MockLogger();
+
+        public static void Main()
+        {
+            var dontRequireSlnToRunBenchmarks = ManualConfig
+                .Create(DefaultConfig.Instance)
+                .AddJob(Job.LongRun.WithToolchain(InProcessEmitToolchain.Instance));
+
+            _ = BenchmarkRunner.Run(typeof(Program), dontRequireSlnToRunBenchmarks);
+        }
 
         [Benchmark]
         public void ClassicLogging1()
@@ -46,7 +56,14 @@ namespace Benchmark
             _logger.Enabled = true;
             for (int i = 0; i < NumLoops; i++)
             {
-                _logger.LogDebug(@"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} and {other}", ConnectionId, Type, StreamId, Length, Flags, Other);
+                _logger.LogDebug(
+                    @"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} and {other}",
+                    ConnectionId,
+                    Type,
+                    StreamId,
+                    Length,
+                    Flags,
+                    Other);
             }
         }
 
@@ -106,7 +123,14 @@ namespace Benchmark
             _logger.Enabled = false;
             for (int i = 0; i < NumLoops; i++)
             {
-                _logger.LogDebug(@"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} and {other}", ConnectionId, Type, StreamId, Length, Flags, Other);
+                _logger.LogDebug(
+                    @"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags} and {other}",
+                    ConnectionId,
+                    Type,
+                    StreamId,
+                    Length,
+                    Flags,
+                    Other);
             }
         }
 
