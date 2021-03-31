@@ -43,11 +43,12 @@ namespace Benchmark
 
         public static void Main()
         {
-            var dontRequireSlnToRunBenchmarks = ManualConfig
-                .Create(DefaultConfig.Instance)
-                .AddJob(Job.MediumRun.WithToolchain(InProcessEmitToolchain.Instance));
+            //var dontRequireSlnToRunBenchmarks = ManualConfig
+            //    .Create(DefaultConfig.Instance)
+            //    .AddJob(Job.MediumRun.WithToolchain(InProcessEmitToolchain.Instance));
+            //  --inprocess --job medium (pass this to crank)
 
-            _ = BenchmarkRunner.Run(typeof(Program), dontRequireSlnToRunBenchmarks);
+            _ = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run();
         }
 
         [Benchmark]
