@@ -4,13 +4,13 @@ imports:
 jobs:
   dotnet:
     source:
-      repository: https://github.com/geeknoid/LoggingGenerator
-      branchOrCommit: master
+      repository: https://github.com/maryamariyan/LoggingGenerator
+      branchOrCommit: test-crank
       project: Benchmark/Benchmark.csproj
     variables:
       filter: "*"
-      job: short
-    arguments: --job {{job}} --filter {{filter}} --memory
+      job: medium
+    arguments: --job {{job}} --filter {{filter}} --memory --inprocess
     framework: net5.0
     options:
       benchmarkDotNet: true
