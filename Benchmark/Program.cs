@@ -41,13 +41,10 @@ namespace Benchmark
 
         private static MockLogger _logger = new MockLogger();
 
-        public static void Main()
+        public static void Main(string[] args)
         {
-            var dontRequireSlnToRunBenchmarks = ManualConfig
-                .Create(DefaultConfig.Instance)
-                .AddJob(Job.MediumRun.WithToolchain(InProcessEmitToolchain.Instance));
-
-            _ = BenchmarkRunner.Run(typeof(Program), dontRequireSlnToRunBenchmarks);
+            // crank tool passes "--inprocess --job medium" args by default
+            _ = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
         }
 
         [Benchmark]
