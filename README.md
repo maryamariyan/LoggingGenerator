@@ -35,22 +35,16 @@ And the resulting generated code:
 ```csharp
 ststic partial class Log
 {
-    private static readonly global::System.Func<global::Microsoft.Extensions.Logging.LogStateHolder<string>, global::System.Exception?, string> __CouldNotOpenSocketFormatFunc = (__holder, _) =>
-    {
-        var hostName = __holder.Value;
-        return $"Could not open socket to `{hostName}`";
-    };
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Extensions.Logging.Generators", "1.0.0.0")]
+    private static readonly global::System.Action<global::Microsoft.Extensions.Logging.ILogger, string, global::System.Exception?> __CouldNotOpenSocketCallback =
+        global::Microsoft.Extensions.Logging.LoggerMessage.Define<string>(global::Microsoft.Extensions.Logging.LogLevel.Critical, new global::Microsoft.Extensions.Logging.EventId(0, nameof(CouldNotOpenSocket)), "Could not open socket to `{hostName}`"); 
 
-    internal static partial void CouldNotOpenSocket(Microsoft.Extensions.Logging.ILogger __logger, string hostName)
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Extensions.Logging.Generators", "1.0.0.0")]
+    public static partial void CouldNotOpenSocket(Microsoft.Extensions.Logging.ILogger logger, string hostName)
     {
-        if (__logger.IsEnabled(global::Microsoft.Extensions.Logging.LogLevel.Critical))
+        if (logger.IsEnabled(global::Microsoft.Extensions.Logging.LogLevel.Critical))
         {
-            __logger.Log(
-                global::Microsoft.Extensions.Logging.LogLevel.Critical,
-                new global::Microsoft.Extensions.Logging.EventId(0, nameof(CouldNotOpenSocket)),
-                new global::Microsoft.Extensions.Logging.Internal.LogValues<string>(nameof(hostName), hostName),
-                null,
-                __CouldNotOpenSocketFormatFunc);
+            __CouldNotOpenSocketCallback(logger, hostName, null);
         }
     }
 }
@@ -105,7 +99,7 @@ The generator supports 2 global options that it recognizes:
 * `PascalCaseArguments` : YES/NO
 
     This will convert argument names to pascal case (from `hostName` to `HostName`) within the generated code such that when the ILogger enumerates
-    the state, the argumenta will be in pascal case, which can make the logs nicer to consume. This defaults to NO.
+    the state, the argumenta will be in pascal case, which can make the logs nicer to consume. This defaults to YES.
 
 * `EmitDefaultMessage` : YES/NO
 
@@ -141,15 +135,6 @@ Here are the current benchmark results:
 |  LoggerMessage2Disabled |   6.215 us |  0.0529 us |  0.0469 us |        - |     - |     - |         - |
 |         LogGen1Disabled |   6.643 us |  0.0602 us |  0.0534 us |        - |     - |     - |         - |
 |         LogGen2Disabled |   5.440 us |  0.0809 us |  0.0717 us |        - |     - |     - |         - |
-```
-
-Here are the numbers for the generated code if LogValues is a struct rather than a class.
-
-```plain
-|                  Method |       Mean |      Error |     StdDev |     Median |    Gen 0 | Gen 1 | Gen 2 | Allocated |
-|------------------------ |-----------:|-----------:|-----------:|-----------:|---------:|------:|------:|----------:|
-|                 LogGen1 | 935.561 us | 18.5950 us | 48.3308 us | 928.564 us | 204.1016 |     - |     - |  856000 B |
-|                 LogGen2 | 566.471 us | 10.8008 us | 10.1031 us | 564.110 us | 133.7891 |     - |     - |  560000 B |
 ```
 
 ## Current State
