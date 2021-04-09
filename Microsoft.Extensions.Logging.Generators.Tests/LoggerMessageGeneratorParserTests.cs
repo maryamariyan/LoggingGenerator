@@ -1,4 +1,5 @@
 // © Microsoft Corporation. All rights reserved.
+#define LOGGER_MESSAGE_DEFINE
 
 using System;
 using System.Collections.Generic;
@@ -28,6 +29,7 @@ namespace Microsoft.Extensions.Logging.Generators.Test
             Assert.Equal(DiagDescriptors.InvalidLoggingMethodName.Id, d[0].Id);
         }
 
+#if !LOGGER_MESSAGE_DEFINE
         [Fact]
         public async Task MissingLogLevel()
         {
@@ -42,6 +44,7 @@ namespace Microsoft.Extensions.Logging.Generators.Test
             _ = Assert.Single(d);
             Assert.Equal(DiagDescriptors.MissingLogLevel.Id, d[0].Id);
         }
+#endif
 
         [Fact]
         public async Task InvalidMethodBody()
@@ -122,6 +125,7 @@ namespace Microsoft.Extensions.Logging.Generators.Test
             Assert.Equal(DiagDescriptors.ShouldntMentionExceptionInMessage.Id, d[0].Id);
         }
 
+#if !LOGGER_MESSAGE_DEFINE
         [Fact]
         public async Task NeedlessLogLevelInMessage()
         {
@@ -136,6 +140,7 @@ namespace Microsoft.Extensions.Logging.Generators.Test
             _ = Assert.Single(d);
             Assert.Equal(DiagDescriptors.ShouldntMentionLogLevelInMessage.Id, d[0].Id);
         }
+#endif
 
         [Fact]
         public async Task NeedlessLoggerInMessage()

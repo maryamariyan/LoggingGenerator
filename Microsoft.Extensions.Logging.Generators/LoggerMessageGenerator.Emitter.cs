@@ -1,5 +1,7 @@
 // © Microsoft Corporation. All rights reserved.
 
+#define LOGGER_MESSAGE_DEFINE
+
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -453,6 +455,7 @@ namespace Microsoft.Extensions.Logging.Generators
 
             private string GenLogMethod(LoggerMethod lm)
             {
+                // Currently limited support using Define for dynamic log level: this assumes if no log level provided we use Debug (TODO confirm now)
                 string level = string.Empty;
 
                 if (lm.Level == null)

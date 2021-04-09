@@ -1,4 +1,5 @@
 // © Microsoft Corporation. All rights reserved.
+#define LOGGER_MESSAGE_DEFINE
 
 #pragma warning disable CA1801 // Review unused parameters
 #pragma warning disable S1118
@@ -33,7 +34,9 @@ namespace Microsoft.Extensions.Logging.Generators.Test.TestClasses
             M8(logger);
             M9(logger);
             M10(logger, null);
+#if !LOGGER_MESSAGE_DEFINE
             M11(logger, "A", LogLevel.Debug, "B");
+#endif
         }
 
         // normal public method
@@ -76,8 +79,9 @@ namespace Microsoft.Extensions.Logging.Generators.Test.TestClasses
         [LoggerMessage(9, LogLevel.Critical, "Message10 {optional}")]
         internal static partial void M10(ILogger logger, string? optional);
 
-        // dynamic log level
+#if !LOGGER_MESSAGE_DEFINE
         [LoggerMessage(10, "Message11 {p1} {p2}")]
         internal static partial void M11(ILogger logger, string p1, LogLevel level, string p2);
+#endif
     }
 }

@@ -1,4 +1,5 @@
 // © Microsoft Corporation. All rights reserved.
+#define LOGGER_MESSAGE_DEFINE
 
 #pragma warning disable CA1801 // Review unused parameters
 
@@ -29,11 +30,12 @@ namespace Microsoft.Extensions.Logging.Generators.Test.TestClasses
 
         [LoggerMessage(7, (LogLevel)42, "M7")]
         public static partial void M7(ILogger logger);
-
+#if !LOGGER_MESSAGE_DEFINE
         [LoggerMessage(8, "M8")]
         public static partial void M8(ILogger logger, LogLevel level);
 
         [LoggerMessage(9, "M9")]
         public static partial void M9(LogLevel level, ILogger logger);
+#endif
     }
 }
