@@ -520,7 +520,7 @@ namespace Microsoft.Extensions.Logging.Generators
                     return $@"
                             [{_generatedCodeAttribute}]
                             private static readonly global::System.Action<global::Microsoft.Extensions.Logging.ILogger, {GenDefineTypes(lm, false)}global::System.Exception?> __{lm.Name}Callback =
-                                global::Microsoft.Extensions.Logging.LoggerMessage.Define{GenDefineTypes(lm, true)}({level}, new global::Microsoft.Extensions.Logging.EventId({lm.EventId}, {eventName}), ""{EscapeMessageString(lm.Message!)}""); 
+                                global::Microsoft.Extensions.Logging.LoggerMessage.Define{GenDefineTypes(lm, true)}({level}, new global::Microsoft.Extensions.Logging.EventId({lm.EventId}, {eventName}), ""{EscapeMessageString(lm.Message!)}"", true); 
 
                             [{_generatedCodeAttribute}]
                             {lm.Modifiers} void {lm.Name}({extension}{GenParameters(lm)})
