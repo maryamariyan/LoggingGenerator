@@ -1,7 +1,6 @@
 // © Microsoft Corporation. All rights reserved.
 
 using System;
-using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Extensions.Logging.Generators.Test
 {
@@ -44,7 +43,7 @@ namespace Microsoft.Extensions.Logging.Generators.Test
             return Enabled;
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
             LastLogLevel = logLevel;
             LastEventId = eventId;
