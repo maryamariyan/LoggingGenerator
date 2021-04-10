@@ -208,7 +208,7 @@ namespace Microsoft.Extensions.Logging.Generators.Test
             var d = await RunGenerator(@"
                 partial class C
                 {
-                    [LoggerMessage(0, LogLevel.Debug, ""M1 {__foo}"")]
+                    [LoggerMessage(EventId = 0, Level = LogLevel.Debug, Message = ""M1 {__foo}"")]
                     static partial void M1(ILogger logger, string __foo);
                 }
             ");
@@ -225,7 +225,7 @@ namespace Microsoft.Extensions.Logging.Generators.Test
                 {
                     public partial class Nested
                     {
-                        [LoggerMessage(0, LogLevel.Debug, ""M1"")]
+                        [LoggerMessage(EventId = 0, Level = LogLevel.Debug, Message = ""M1"")]
                         static partial void M1(ILogger logger);
                     }
                 }

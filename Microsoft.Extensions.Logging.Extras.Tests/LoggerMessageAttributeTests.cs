@@ -35,6 +35,12 @@ namespace Microsoft.Extensions.Logging.Test
 
             a.EventName = "Name";
             Assert.Equal("Name", a.EventName);
+
+            // defaults
+            a = new LoggerMessageAttribute();
+            Assert.Equal(-1, a.EventId);
+            Assert.Equal("", a.Message);
+            Assert.Equal(LogLevel.None, a.Level);
         }
     }
 }

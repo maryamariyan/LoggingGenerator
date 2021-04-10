@@ -37,7 +37,7 @@ namespace Microsoft.Extensions.Logging
         /// <summary>
         /// Gets the logging event id for the logging method.
         /// </summary>
-        public int EventId { get; set; }
+        public int EventId { get; set; } = -1;
 
         /// <summary>
         /// Gets or sets the logging event name for the logging method.
