@@ -92,19 +92,6 @@ static partial class Log
 }
 ```
 
-## Options
-
-The generator supports 2 global options that it recognizes:
-
-* `PascalCaseArguments` : YES/NO
-
-    This will convert argument names to pascal case (from `hostName` to `HostName`) within the generated code such that when the ILogger enumerates
-    the state, the argumenta will be in pascal case, which can make the logs nicer to consume. This defaults to YES.
-
-* `EmitDefaultMessage` : YES/NO
-
-    This controls whether to generate a default message when none is supplied in the attribute. This defaults to YES.
-
 ## Analyzer and Fixer
 
 The `Microsoft.Extensions.Logging.Analyzers` project contains an analyzer that produces a warning
