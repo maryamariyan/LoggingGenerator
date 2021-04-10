@@ -82,17 +82,35 @@ static partial class Log
 }
 ```
 
-You cannot omit the logging message.
+Also, when you omit the logging message, even though the message produced would be empty, but the state would be able to hold any input parameters in the log structure. For example:
 
 ```csharp
 static partial class Log
 {
     [LoggerMessage(0, LogLevel.Critical)]
-    public static partial void CouldNotOpenSocket(ILogger logger, string hostName);
+    public static partial void LogMethod(ILogger logger, string hiddenParameter);
 }
 ```
 
-TODO: TEST - When not provided, source generator will produce diagnostic pointing to message being required.
+given the method call:
+```csharp
+Log.LogMethod(logger, "my parameter hidden from message");
+```
+
+here's the Json console output:
+```
+{
+  "EventId": 0,
+  "LogLevel": "Critical",
+  "Category": "LoggingExample",
+  "Message": "",
+  "State": {
+    "Message": "",
+    "hiddenParameter": "my parameter hidden from message",
+    "{OriginalFormat}": ""
+  }
+}
+```
 
 ## Analyzer and Fixer
 
