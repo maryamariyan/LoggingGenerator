@@ -15,25 +15,25 @@ namespace Example
     // that have logger messages, if a developer choses to.
     static partial class Log
     {
-        [LoggerMessage(0, LogLevel.Critical, "Could not open socket to `{hostName}`")]
+        [LoggerMessage(EventId = 0, Level = LogLevel.Critical, Message = "Could not open socket to `{hostName}`")]
         public static partial void CouldNotOpenSocket(ILogger logger, string hostName);
 
-        [LoggerMessage(1, LogLevel.Debug, @"Connection id '{connectionId}' started.")]
+        [LoggerMessage(EventId = 1, Level = LogLevel.Debug, Message = @"Connection id '{connectionId}' started.")]
         public static partial void ConnectionStart(ILogger logger, string connectionId);
 
-        [LoggerMessage(2, LogLevel.Debug, @"Connection id '{connectionId}' stopped.")]
+        [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = @"Connection id '{connectionId}' stopped.")]
         public static partial void ConnectionStop(ILogger logger, string connectionId);
 
-        [LoggerMessage(4, LogLevel.Debug, @"Connection id '{connectionId}' paused.")]
+        [LoggerMessage(EventId = 4, Level = LogLevel.Debug, Message = @"Connection id '{connectionId}' paused.")]
         public static partial void ConnectionPause(ILogger logger, string connectionId);
 
-        [LoggerMessage(5, LogLevel.Debug, @"Connection id '{connectionId}' resume.")]
+        [LoggerMessage(EventId = 5, Level = LogLevel.Debug, Message = @"Connection id '{connectionId}' resume.")]
         public static partial void ConnectionResume(ILogger logger, string connectionId);
 
-        [LoggerMessage(9, LogLevel.Debug, @"Connection id '{connectionId}' completed keep alive response.")]
+        [LoggerMessage(EventId = 9, Level = LogLevel.Debug, Message = @"Connection id '{connectionId}' completed keep alive response.")]
         public static partial void ConnectionKeepAlive(ILogger logger, string connectionId);
 
-        [LoggerMessage(38, LogLevel.Debug, @"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags}")]
+        [LoggerMessage(EventId = 38, Level = LogLevel.Debug, Message = @"Connection id '{connectionId}' received {type} frame for stream ID {streamId} with length {length} and flags {flags}")]
         public static partial void Http2FrameReceived(ILogger logger, string connectionId, byte type, int streamId, int length, byte flags);
 
         // Not a logger message

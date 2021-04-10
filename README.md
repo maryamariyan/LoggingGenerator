@@ -24,7 +24,7 @@ Here is an example class written by a developer, followed by the code being auto
 ```csharp
 static partial class Log
 {
-    [LoggerMessage(0, LogLevel.Critical, "Could not open socket to `{hostName}`")]
+    [LoggerMessage(EventId = 0, Level = LogLevel.Critical, Message = "Could not open socket to `{hostName}`")]
     public static partial void CouldNotOpenSocket(ILogger logger, string hostName);
 }
 ```
@@ -66,7 +66,7 @@ class MyLogWrapper
         _logger = logger;
     }
     
-    [LoggerMessage(0, LogLevel.Critical, "Could not open socket to `{hostName}`")]
+    [LoggerMessage(EventId = 0, Level = LogLevel.Critical, Message = "Could not open socket to `{hostName}`")]
     public partial void CouldNotOpenSocket(string hostName);
 }
 ```
@@ -77,12 +77,12 @@ from the attribute and instead supplying it as an argument to the logging method
 ```csharp
 static partial class Log
 {
-    [LoggerMessage(0, "Could not open socket to `{hostName}`")]
+    [LoggerMessage(EventId = 0, Message = "Could not open socket to `{hostName}`")]
     public static partial void CouldNotOpenSocket(ILogger logger, LogLevel level, string hostName);
 }
 ```
 
-You can omit the logging message and a default one will be provided for you that formats the arguments into a JSON-encoded string:
+You cannot omit the logging message.
 
 ```csharp
 static partial class Log
@@ -91,6 +91,8 @@ static partial class Log
     public static partial void CouldNotOpenSocket(ILogger logger, string hostName);
 }
 ```
+
+TODO: TEST - When not provided, source generator will produce diagnostic pointing to message being required.
 
 ## Analyzer and Fixer
 
