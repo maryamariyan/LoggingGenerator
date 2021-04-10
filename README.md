@@ -24,7 +24,7 @@ Here is an example class written by a developer, followed by the code being auto
 ```csharp
 static partial class Log
 {
-    [LoggerMessage(0, LogLevel.Critical, "Could not open socket to `{hostName}`")]
+    [LoggerMessage(EventId = 0, Level = LogLevel.Critical, Message = "Could not open socket to `{hostName}`")]
     public static partial void CouldNotOpenSocket(ILogger logger, string hostName);
 }
 ```
@@ -66,7 +66,7 @@ class MyLogWrapper
         _logger = logger;
     }
     
-    [LoggerMessage(0, LogLevel.Critical, "Could not open socket to `{hostName}`")]
+    [LoggerMessage(EventId = 0, Level = LogLevel.Critical, Message = "Could not open socket to `{hostName}`")]
     public partial void CouldNotOpenSocket(string hostName);
 }
 ```
@@ -77,18 +77,38 @@ from the attribute and instead supplying it as an argument to the logging method
 ```csharp
 static partial class Log
 {
-    [LoggerMessage(0, "Could not open socket to `{hostName}`")]
+    [LoggerMessage(EventId = 0, Message = "Could not open socket to `{hostName}`")]
     public static partial void CouldNotOpenSocket(ILogger logger, LogLevel level, string hostName);
 }
 ```
 
-You can omit the logging message and a default one will be provided for you that formats the arguments into a JSON-encoded string:
+Also, when you omit the logging message, even though the message produced would be empty, but the state would be able to hold any input parameters in the log structure. For example:
 
 ```csharp
 static partial class Log
 {
     [LoggerMessage(0, LogLevel.Critical)]
-    public static partial void CouldNotOpenSocket(ILogger logger, string hostName);
+    public static partial void LogMethod(ILogger logger, string hiddenParameter);
+}
+```
+
+given the method call:
+```csharp
+Log.LogMethod(logger, "my parameter hidden from message");
+```
+
+here's the Json console output:
+```
+{
+  "EventId": 0,
+  "LogLevel": "Critical",
+  "Category": "LoggingExample",
+  "Message": "",
+  "State": {
+    "Message": "",
+    "hiddenParameter": "my parameter hidden from message",
+    "{OriginalFormat}": ""
+  }
 }
 ```
 

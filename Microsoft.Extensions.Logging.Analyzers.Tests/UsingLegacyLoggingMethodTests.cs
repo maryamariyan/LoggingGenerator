@@ -399,7 +399,7 @@ static partial class Log
     /// <summary>
     /// Logs `Hello` at `Trace` level.
     /// </summary>
-    [LoggerMessage(0, LogLevel.Trace, ""Hello"")]
+    [LoggerMessage(EventId = 0, Level = LogLevel.Trace, Message = ""Hello"")]
     internal static partial void Hello(ILogger logger);
 }
 ";
@@ -534,7 +534,7 @@ namespace Example
         /// <summary>
         /// Logs `Hello` at `Trace` level.
         /// </summary>
-        [LoggerMessage(0, LogLevel.Trace, ""Hello"")]
+        [LoggerMessage(EventId = 0, Level = LogLevel.Trace, Message = ""Hello"")]
         internal static partial void Hello(ILogger logger);
     }
 }
@@ -691,7 +691,7 @@ namespace Example.Example2
         /// <summary>
         /// Logs `Hello` at `Trace` level.
         /// </summary>
-        [LoggerMessage(0, LogLevel.Trace, ""Hello"")]
+        [LoggerMessage(EventId = 0, Level = LogLevel.Trace, Message = ""Hello"")]
         internal static partial void Hello(ILogger logger);
     }
 }
@@ -765,7 +765,7 @@ namespace Example
         /// <summary>
         /// Logs `Hello` at `Trace` level.
         /// </summary>
-        [LoggerMessage(0, LogLevel.Trace, ""Hello"")]
+        [LoggerMessage(EventId = 0, Level = LogLevel.Trace, Message = ""Hello"")]
         internal static partial void Hello(ILogger logger);
     }
 }
@@ -883,7 +883,7 @@ namespace Example
                     {
                         /*0+*/static partial class Log/*-0*/
                         {
-                            [Microsoft.Extensions.Logging.LoggerMessage(0, LogLevel.Trace, ""Hello"")]
+                            [Microsoft.Extensions.Logging.LoggerMessage(EventId = 0, Level = LogLevel.Trace, Message = ""Hello"")]
                             internal static void Hello(ILogger logger) {}
 
                             [Obsolete]

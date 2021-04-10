@@ -9,7 +9,12 @@ namespace Microsoft.Extensions.Logging.Test
         [Fact]
         public void Basic()
         {
-            var a = new LoggerMessageAttribute(42, LogLevel.Trace, "Foo");
+            var a = new LoggerMessageAttribute()
+            {
+                Level = LogLevel.Trace, 
+                EventId = 42, 
+                Message = "Foo"
+            };
             Assert.Equal(42, a.EventId);
             Assert.Equal(LogLevel.Trace, a.Level);
             Assert.Equal("Foo", a.Message);
@@ -18,14 +23,24 @@ namespace Microsoft.Extensions.Logging.Test
             a.EventName = "Name";
             Assert.Equal("Name", a.EventName);
 
-            a = new LoggerMessageAttribute(42, "Foo");
+            a = new LoggerMessageAttribute()
+            {
+                EventId = 42,
+                Message = "Foo"
+            };
             Assert.Equal(42, a.EventId);
-            Assert.False(a.Level.HasValue);
+            Assert.Equal(LogLevel.None, a.Level);
             Assert.Equal("Foo", a.Message);
             Assert.Null(a.EventName);
 
             a.EventName = "Name";
             Assert.Equal("Name", a.EventName);
+
+            // defaults
+            a = new LoggerMessageAttribute();
+            Assert.Equal(-1, a.EventId);
+            Assert.Equal("", a.Message);
+            Assert.Equal(LogLevel.None, a.Level);
         }
     }
 }
