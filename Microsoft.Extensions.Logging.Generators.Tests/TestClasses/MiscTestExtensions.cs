@@ -40,3 +40,11 @@ namespace Level1
         }
     }
 }
+namespace Misc
+{
+    partial class C
+    {
+        [LoggerMessage(EventId = 0, Level = LogLevel.Debug, Message = "M1 {timeStamp}")]
+        public static partial void M1(ILogger logger, System.DateTime timeStamp);
+    }
+}
